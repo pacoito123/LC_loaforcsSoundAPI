@@ -28,7 +28,7 @@ static class AudioSourcePatch {
 	[HarmonyPrefix]
 	[HarmonyPatch(nameof(AudioSource.PlayOneShot), [typeof(AudioClip), typeof(float)])]
 	static bool PlayOneShot(AudioSource __instance, ref AudioClip clip) {
-		if(SoundReplacementHandler.TryReplaceAudio(__instance, clip, out AudioClip replacement)) {
+		if(SoundReplacementHandler.TryReplaceAudio(__instance, clip, out AudioClip replacement, isOneShot: true)) {
 			if(replacement == null) return false;
 			clip = replacement;
 		}
