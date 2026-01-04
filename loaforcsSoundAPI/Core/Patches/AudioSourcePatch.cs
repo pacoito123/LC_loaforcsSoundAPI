@@ -70,6 +70,6 @@ static class AudioSourcePatch {
 
 		AudioSourceAdditionalData data = AudioSourceAdditionalData.GetOrCreate(__instance);
 		__result = data.OriginalClip;
-		Debuggers.AudioClipSpoofing?.Log($"({__instance.gameObject.name}) spoofing result to {data.OriginalClip.name}");
+		Debuggers.AudioClipSpoofing?.Log($"({__instance.gameObject.name}) spoofing result to {((data.OriginalClip != null) ? data.OriginalClip.name : "null")}");
 	}
 }
