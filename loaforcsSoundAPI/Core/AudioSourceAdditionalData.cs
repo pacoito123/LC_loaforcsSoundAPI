@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using loaforcsSoundAPI.Core.Patches;
-using loaforcsSoundAPI.SoundPacks;
+﻿using System.Linq;
 using loaforcsSoundAPI.SoundPacks.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using UnityEngine;
@@ -93,7 +89,7 @@ public class AudioSourceAdditionalData {
 	internal void Update() {
 		if(!RequiresUpdateFunction() || !AudioSourceIsPlaying()) return;
 
-		Debuggers.UpdateEveryFrame?.Log($"success: updating every frame for {Source.name}");
+		// Debuggers.UpdateEveryFrame?.Log($"success: updating every frame for {Source.name}");
 
 		IContext context = CurrentContext ?? DefaultConditionContext.DEFAULT;
 
@@ -101,7 +97,6 @@ public class AudioSourceAdditionalData {
 		if(sound == null) return;
 		if(sound.Clip == Source.clip) return;
 		Debuggers.UpdateEveryFrame?.Log("new clip found, swapping!!");
-
 
 		float currentTime = Source.time;
 		Source.clip = sound.Clip;
@@ -116,7 +111,7 @@ public class AudioSourceAdditionalData {
 	}
 
 	bool AudioSourceIsPlaying() {
-		return Source && Source.enabled && Source.isPlaying;
+		return Source != null && Source.enabled && Source.isPlaying;
 	}
 
 	public static AudioSourceAdditionalData GetOrCreate(AudioSource source) {

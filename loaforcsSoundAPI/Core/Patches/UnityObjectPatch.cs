@@ -9,7 +9,7 @@ namespace loaforcsSoundAPI.Core.Patches;
 //[HarmonyPatch(typeof(UnityEngine.Object))]
 static class UnityObjectPatch {
 	static void InstantiatePatch(UnityEngine.Object __result) {
-		Debuggers.AudioSourceAdditionalData?.Log($"aghuobr: {__result.name}");
+		// Debuggers.AudioSourceAdditionalData?.Log($"aghuobr: {__result.name}");
 		if(__result is not GameObject gameObject) return;
 		CheckInstantiationRecursively(gameObject);
 	}

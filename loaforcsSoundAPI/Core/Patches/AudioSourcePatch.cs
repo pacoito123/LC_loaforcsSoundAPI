@@ -1,8 +1,8 @@
-﻿using System;
-using HarmonyLib;
+﻿using HarmonyLib;
+using loaforcsSoundAPI.Core.Util.Extensions;
 using loaforcsSoundAPI.SoundPacks;
+using loaforcsSoundAPI.SoundPacks.Data;
 using UnityEngine;
-using UnityEngine.Experimental.Audio;
 
 namespace loaforcsSoundAPI.Core.Patches;
 
@@ -11,13 +11,13 @@ static class AudioSourcePatch {
 	internal static bool bypassSpoofing;
 
 	[HarmonyPrefix]
-	[HarmonyPatch(nameof(AudioSource.Play), new Type[] { })]
+	[HarmonyPatch(nameof(AudioSource.Play), [])]
 	[HarmonyPatch(nameof(AudioSource.Play), [typeof(ulong)])]
 	[HarmonyPatch(nameof(AudioSource.Play), [typeof(double)])]
 	static bool Play(AudioSource __instance) {
 		AudioSourceAdditionalData data = AudioSourceAdditionalData.GetOrCreate(__instance);
 
-		if(SoundReplacementHandler.TryReplaceAudio(__instance, data.OriginalClip, out AudioClip replacement)) {
+		if(SoundReplacementHandler.TryReplaceAudio(__instance, data.OriginalClip, out SoundReplacementGroup _, out AudioClip replacement)) {
 			if(replacement == null) return false;
 			data.RealClip = replacement;
 		}
@@ -28,7 +28,7 @@ static class AudioSourcePatch {
 	[HarmonyPrefix]
 	[HarmonyPatch(nameof(AudioSource.PlayOneShot), [typeof(AudioClip), typeof(float)])]
 	static bool PlayOneShot(AudioSource __instance, ref AudioClip clip) {
-		if(SoundReplacementHandler.TryReplaceAudio(__instance, clip, out AudioClip replacement, isOneShot: true)) {
+		if(SoundReplacementHandler.TryReplaceAudio(__instance, clip, out SoundReplacementGroup _, out AudioClip replacement, isOneShot: true)) {
 			if(replacement == null) return false;
 			clip = replacement;
 		}
@@ -42,7 +42,7 @@ static class AudioSourcePatch {
 	static void UpdateOriginalClip(AudioSource __instance, AudioClip value, bool __runOriginal) {
 		if(!__runOriginal) return;
 
-		AudioSourceAdditionalData data = AudioSourceAdditionalData.GetOrCreate(__instance);
+		AudioSourceAdditionalData data = __instance.GetAdditionalData();
 		data.OriginalClip = value;
 		Debuggers.AudioClipSpoofing?.Log($"({__instance.gameObject.name}) updating original clip to: {value.name}");
 	}
@@ -58,7 +58,7 @@ static class AudioSourcePatch {
 		 *
 		 * This preforms the intended behaviour from the game/mod creator pov where the audio does not restart if they think they are setting it to the same thing
 		 */
-		AudioSourceAdditionalData data = AudioSourceAdditionalData.GetOrCreate(__instance);
+		AudioSourceAdditionalData data = __instance.GetAdditionalData();
 		if(data.OriginalClip == value) Debuggers.AudioClipSpoofing?.Log("prevented clip from restarting");
 		return data.OriginalClip != value;
 	}
@@ -68,7 +68,7 @@ static class AudioSourcePatch {
 	static void SpoofAudioSourceClip(AudioSource __instance, ref AudioClip __result) {
 		if(!PatchConfig.AudioClipSpoofing || bypassSpoofing) return;
 
-		AudioSourceAdditionalData data = AudioSourceAdditionalData.GetOrCreate(__instance);
+		AudioSourceAdditionalData data = __instance.GetAdditionalData();
 		__result = data.OriginalClip;
 		Debuggers.AudioClipSpoofing?.Log($"({__instance.gameObject.name}) spoofing result to {((data.OriginalClip != null) ? data.OriginalClip.name : "null")}");
 	}
