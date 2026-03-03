@@ -34,13 +34,17 @@ public class SoundReplacementCollection : Conditional, IFilePathAware, IPackData
 
 	public string RelativePath {
 		get {
-			if (field.Length == 0) {
+			if(field.Length == 0) {
 				int index = FilePath.IndexOf("replacers", StringComparison.InvariantCultureIgnoreCase);
-				if (index != -1)
+				if(index != -1)
 					field = FilePath[index..];
 			}
 			return field;
 		}
 		set;
 	} = string.Empty;
+
+	public override string ToString() {
+		return $"Collection in pack '{Pack.Name}' with #{Replacements.Count} replacements: {RelativePath}";
+	}
 }
