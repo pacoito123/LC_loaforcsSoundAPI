@@ -31,29 +31,25 @@ public class AudioSourceAdditionalData {
 	/// <remarks>
 	/// This should be used almost everywhere internally in SoundAPI when updating the AudioClip on an AudioSource.
 	/// </remarks>
-	public AudioClip RealClip {
+	public AudioClip? RealClip {
 		get {
 			using(new SpoofBypassContext()) {
-				if(Debuggers.AudioSourceAdditionalData != null) {
-					string realClip = "null";
-					if(Source.clip) realClip = Source.clip.name;
+				string realClip = "null";
+				if(Source.clip != null) realClip = Source.clip.name;
 
-					string originalClip = "null";
-					if(OriginalClip) originalClip = OriginalClip.name;
-					Debuggers.AudioSourceAdditionalData.Log($"({Source.name}) Getting real clip: {realClip} (original clip: {originalClip})");
-				}
+				string originalClip = "null";
+				if(OriginalClip != null) originalClip = OriginalClip.name;
+				Debuggers.AudioSourceAdditionalData?.Log($"({Source.name}) Getting real clip: {realClip} (original clip: {originalClip})");
 
 				return Source.clip;
 			}
 		}
 		set {
 			using(new SpoofBypassContext()) {
-				if(Debuggers.AudioSourceAdditionalData != null) {
-					string originalClip = "null";
-					if(OriginalClip) originalClip = OriginalClip.name;
-
+				string originalClip = "null";
+				if(OriginalClip != null) originalClip = OriginalClip.name;
+				if(value != null)
 					Debuggers.AudioSourceAdditionalData?.Log($"({Source.name}) Setting real clip: {value.name} (original clip: {originalClip})");
-				}
 
 				Source.clip = value;
 			}
@@ -86,6 +82,11 @@ public class AudioSourceAdditionalData {
 	/// </summary>
 	public IContext CurrentContext { get; set; }
 
+	/// <summary>
+	/// Is the current Audio Source part of the pool for OneShots?
+	/// </summary>
+	public bool IsPooled { get; internal set; }
+
 	internal void Update() {
 		if(!RequiresUpdateFunction() || !AudioSourceIsPlaying()) return;
 
@@ -93,13 +94,17 @@ public class AudioSourceAdditionalData {
 
 		IContext context = CurrentContext ?? DefaultConditionContext.DEFAULT;
 
-		SoundInstance sound = ReplacedWith.Sounds.FirstOrDefault(x => x.Evaluate(context));
-		if(sound == null) return;
-		if(sound.Clip == Source.clip) return;
+		SoundInstance? sound = ReplacedWith?.Sounds?.FirstOrDefault(x => x.Evaluate(context));
+		if(sound == null || sound.Clip == Source.clip) return;
 		Debuggers.UpdateEveryFrame?.Log("new clip found, swapping!!");
 
 		float currentTime = Source.time;
+		if(currentTime >= sound.Clip.length) {
+			Source.Stop(); // TODO: Condition to remember playback time.
+			return;
+		}
 		Source.clip = sound.Clip;
+
 		Source.Play();
 		Source.time = currentTime;
 
@@ -107,7 +112,7 @@ public class AudioSourceAdditionalData {
 	}
 
 	bool RequiresUpdateFunction() {
-		return ReplacedWith != null && ReplacedWith.Parent.UpdateEveryFrame;
+		return ReplacedWith != null && ReplacedWith.Parent.UpdateEveryFrame && !IsPooled;
 	}
 
 	bool AudioSourceIsPlaying() {

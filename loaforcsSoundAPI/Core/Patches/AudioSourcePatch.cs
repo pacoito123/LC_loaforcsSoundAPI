@@ -16,10 +16,13 @@ static class AudioSourcePatch {
 	[HarmonyPatch(nameof(AudioSource.Play), [typeof(double)])]
 	static bool Play(AudioSource __instance) {
 		AudioSourceAdditionalData data = AudioSourceAdditionalData.GetOrCreate(__instance);
+		if(data.OriginalClip == null) return true;
 
-		if(SoundReplacementHandler.TryReplaceAudio(__instance, data.OriginalClip, out SoundReplacementGroup _, out AudioClip replacement)) {
+		if(SoundReplacementHandler.TryReplaceAudio(__instance, data.OriginalClip, out SoundReplacementGroup group, out AudioClip replacement)) {
 			if(replacement == null) return false;
+
 			data.RealClip = replacement;
+			data.ReplacedWith = group;
 		}
 
 		return true;
@@ -27,10 +30,34 @@ static class AudioSourcePatch {
 
 	[HarmonyPrefix]
 	[HarmonyPatch(nameof(AudioSource.PlayOneShot), [typeof(AudioClip), typeof(float)])]
-	static bool PlayOneShot(AudioSource __instance, ref AudioClip clip) {
-		if(SoundReplacementHandler.TryReplaceAudio(__instance, clip, out SoundReplacementGroup _, out AudioClip replacement, isOneShot: true)) {
+	static bool PlayOneShot(AudioSource __instance, ref AudioClip clip, float volumeScale) {
+		if(clip != null && SoundReplacementHandler.TryReplaceAudio(__instance, clip, out SoundReplacementGroup group, out AudioClip replacement, isOneShot: true)) {
 			if(replacement == null) return false;
-			clip = replacement;
+
+			AudioSourceAdditionalData additionalData = __instance.GetAdditionalData();
+			if(group?.Parent?.UpdateEveryFrame != true) {
+				clip = replacement;
+
+				return true;
+			}
+
+			AudioSourcePool? pool = AudioSourcePoolManager.SourcePool.Get();
+			if(pool == null) return false;
+
+			pool.assignedSource = __instance;
+			pool.assignedSource.CopyTo(pool.pooledSource);
+
+			pool.assignedAdditionalData = additionalData;
+
+			pool.pooledAdditionalData.RealClip = replacement;
+			pool.pooledAdditionalData.CurrentContext = additionalData.CurrentContext;
+			pool.pooledAdditionalData.ReplacedWith = group;
+
+			pool.pooledSource.volume *= volumeScale;
+			pool.pooledSource.clip = replacement;
+			pool.pooledSource.Play();
+
+			return false;
 		}
 
 		return true;
@@ -43,8 +70,10 @@ static class AudioSourcePatch {
 		if(!__runOriginal) return;
 
 		AudioSourceAdditionalData data = __instance.GetAdditionalData();
+		if(data.IsPooled) return;
 		data.OriginalClip = value;
-		Debuggers.AudioClipSpoofing?.Log($"({__instance.gameObject.name}) updating original clip to: {value.name}");
+		if(value != null)
+			Debuggers.AudioClipSpoofing?.Log($"({__instance.gameObject.name}) updating original clip to: {value.name}");
 	}
 
 	[HarmonyPatch(nameof(AudioSource.clip), MethodType.Setter)]
@@ -59,6 +88,7 @@ static class AudioSourcePatch {
 		 * This preforms the intended behaviour from the game/mod creator pov where the audio does not restart if they think they are setting it to the same thing
 		 */
 		AudioSourceAdditionalData data = __instance.GetAdditionalData();
+		if(data.IsPooled) return true;
 		if(data.OriginalClip == value) Debuggers.AudioClipSpoofing?.Log("prevented clip from restarting");
 		return data.OriginalClip != value;
 	}
@@ -69,6 +99,7 @@ static class AudioSourcePatch {
 		if(!PatchConfig.AudioClipSpoofing || bypassSpoofing) return;
 
 		AudioSourceAdditionalData data = __instance.GetAdditionalData();
+		if(data.IsPooled) return;
 		__result = data.OriginalClip;
 		Debuggers.AudioClipSpoofing?.Log($"({__instance.gameObject.name}) spoofing result to {((data.OriginalClip != null) ? data.OriginalClip.name : "null")}");
 	}

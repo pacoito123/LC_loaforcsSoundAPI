@@ -34,36 +34,37 @@ static class SoundReplacementHandler {
 		SceneManager.sceneLoaded += (scene, _) => {
 			_cachedObjectNames.Clear();
 
-			foreach(AudioSource source in Object.FindObjectsByType<AudioSource>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)) {
-				if(source.gameObject.scene != scene) continue; // already processed
+			foreach(AudioSource source in Object.FindObjectsByType<AudioSource>(FindObjectsInactive.Include, FindObjectsSortMode.None)) {
+				// if(source.gameObject.scene != scene) continue; // already processed
 				CheckAudioSource(source);
 			}
 		};
 	}
 
 	internal static void CheckAudioSource(AudioSource source) {
-		if(!source.playOnAwake || !source.enabled || !source.isActiveAndEnabled) return;
-
 		AudioSourceAdditionalData data = source.GetAdditionalData();
+		if(data.IsPooled) return;
 
-		if(!TryReplaceAudio(source, data.OriginalClip, out SoundReplacementGroup _, out AudioClip replacement)) return;
+		if(!TryReplaceAudio(source, data.OriginalClip, out SoundReplacementGroup group, out AudioClip replacement)) return;
 
 		source.Stop();
-		if(replacement == null) return;
+		data.ReplacedWith = group;
 		data.RealClip = replacement;
 
+		if(!source.playOnAwake || !source.enabled || !source.isActiveAndEnabled) return;
 		source.Play();
 	}
 
 	internal static bool TryReplaceAudio(AudioSource source, AudioClip clip, out SoundReplacementGroup group, out AudioClip replacement, bool isOneShot = false) {
 		group = null!;
 		replacement = null!;
-		if(source.gameObject == null) // i dont even remember why this is here again
+		if(source == null || source.gameObject == null) // i dont even remember why this is here again
 			return false;
 
 		AudioSourceAdditionalData sourceData = source.GetAdditionalData();
-		if(sourceData.ReplacedWith != null && sourceData.ReplacedWith.Parent.UpdateEveryFrame) return false; // the SoundAPIAudioManager is currently handling it, therefore we should not intervene.
+		// if(sourceData.ReplacedWith?.Parent?.UpdateEveryFrame == true) return false; // the SoundAPIAudioManager is currently handling it, therefore we should not intervene.
 		if(sourceData.DisableReplacing) return false; // another mod has disabled replacing
+		if(sourceData.IsPooled) return false;
 
 		string[] name = ArrayPool<string>.Shared.Rent(3);
 
@@ -75,17 +76,9 @@ static class SoundReplacementHandler {
 			return false;
 		}
 
-		/* if(isOneShot && group.Parent.UpdateEveryFrame) {
-			group.Parent.Pack.Logger.LogWarning($"Attempting to update a OneShot clip every frame due to match '{name[TOKEN_PARENT_NAME]}:{name[TOKEN_OBJECT_NAME]}:{name[TOKEN_CLIP_NAME]}' "
-				+ $"in replacer '{group.Parent.RelativePath}'. There may be weird behavior!");
-		} */
-
 		ArrayPool<string>.Shared.Return(name);
 
-		if(replacement != null && clip != null) replacement.name = clip.name;
-		if(!isOneShot) sourceData.ReplacedWith = group;
-
-		if(group.Parent.UpdateEveryFrame) Debuggers.UpdateEveryFrame?.Log("swapped to a clip that uses update_every_frame !!!");
+		if(group?.Parent?.UpdateEveryFrame == true) Debuggers.UpdateEveryFrame?.Log("swapped to a clip that uses update_every_frame !!!");
 
 		return true;
 	}

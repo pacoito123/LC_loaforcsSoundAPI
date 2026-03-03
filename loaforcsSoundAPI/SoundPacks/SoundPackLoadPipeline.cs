@@ -139,7 +139,7 @@ static class SoundPackLoadPipeline {
 						AudioClip clip = DownloadHandlerAudioClip.GetContent(operation.WebRequest);
 						operation.Sound.Clip = clip;
 						operation.WebRequest.Dispose();
-						Debuggers.SoundReplacementLoader?.Log("clip generated");
+						Debuggers.SoundReplacementLoader?.Log($"clip generated: {clip.name}");
 
 						operation.IsDone = true;
 					} catch(Exception exception) {
