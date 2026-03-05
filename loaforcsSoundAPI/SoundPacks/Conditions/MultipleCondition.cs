@@ -23,10 +23,12 @@ public abstract class MultipleCondition<T> : Condition {
         SceneManager.sceneLoaded += PopulateValues;
     }
 
+    /// <inheritdoc/>
     public override bool Evaluate(IContext context) {
         return Values?.Length > 0 && Array.FindIndex(Values, CheckValue) != -1;
     }
 
+    /// <inheritdoc/>
     public override List<IValidatable.ValidationResult> Validate() {
         SoundAPIConditionAttribute? attribute = GetType().GetCustomAttribute<SoundAPIConditionAttribute>();
         return !string.IsNullOrEmpty(Value) ? [] : [new(IValidatable.ResultType.FAIL,

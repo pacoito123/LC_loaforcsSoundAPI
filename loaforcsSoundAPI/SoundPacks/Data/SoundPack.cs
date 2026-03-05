@@ -82,7 +82,7 @@ public class SoundPack : IValidatable {
 		return true;
 	}
 
-	/// <inheritdoc />
+	/// <inheritdoc/>
 	public List<IValidatable.ValidationResult> Validate() {
 		List<IValidatable.ValidationResult> results = [];
 

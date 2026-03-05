@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using JetBrains.Annotations;
 using loaforcsSoundAPI.Core.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 
@@ -21,7 +22,8 @@ public class CounterCondition : Condition {
 	/// </summary>
 	/// <value>ValueRange</value>
 	/// <example>1</example>
-	public string Value { get; private set; }
+	[CanBeNull]
+	public string Value { get; private set; } = null!;
 
 	/// <summary>
 	/// Resets after reaching this number. Inclusive.
@@ -35,7 +37,7 @@ public class CounterCondition : Condition {
 	public override bool Evaluate(IContext context) {
 		LogDebug("counter", $"counting: {_count} -> {_count + 1}");
 		_count++;
-		bool result = EvaluateRangeOperator(_count, Value);
+		bool result = EvaluateRangeOperator(_count);
 		LogDebug("counter", $"is {_count} in range ({Value})? {result}");
 		if(_count >= ResetsAt) {
 			_count = 0;

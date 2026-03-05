@@ -12,7 +12,7 @@ namespace loaforcsSoundAPI.SoundPacks.Data.Conditions;
 /// <seealso cref="IContext"/>
 public abstract class Condition : IValidatable {
 	[field: NonSerialized]
-	public Conditional Parent { get; internal set; }
+	public Conditional Parent { get; internal set; } = null!;
 
 	/// <summary>
 	/// Utility property to quickly access an instance of a condition's <see cref="SoundPack"/>
@@ -26,6 +26,17 @@ public abstract class Condition : IValidatable {
 	/// </summary>
 	public bool? Constant { get; private set; }
 
+	/// <summary>
+	/// 	The range of values to check.
+	/// </summary>
+	public RangeOperator<double> Range {
+		get => _range;
+		private set => _range = value;
+	}
+	private RangeOperator<double> _range;
+
+	protected static readonly RangeOperator<double> infinityRange = new(double.NegativeInfinity, double.PositiveInfinity);
+
 	protected internal virtual void OnRegistered() { }
 
 	/// <summary>
@@ -35,92 +46,74 @@ public abstract class Condition : IValidatable {
 	/// <returns>If condition succeeds</returns>
 	public abstract bool Evaluate(IContext context);
 
-	/// <inheritdoc />
+	/// <inheritdoc/>
 	public virtual List<IValidatable.ValidationResult> Validate() {
 		return [];
 	}
 
-	/// <inheritdoc cref="EvaluateRangeOperator(double,string)"/>
-	protected bool EvaluateRangeOperator(int number, string condition) {
-		return EvaluateRangeOperator((double)number, condition);
+	/// <inheritdoc cref="EvaluateRangeOperator(double)"/>
+	protected bool EvaluateRangeOperator(int value) {
+		return EvaluateRangeOperator((double)value);
 	}
 
+	/// <inheritdoc cref="EvaluateRangeOperator(double)"/>
+	protected bool EvaluateRangeOperator(int value, RangeOperator<double> condition) {
+		return EvaluateRangeOperator((double)value, condition);
+	}
 
-	/// <inheritdoc cref="EvaluateRangeOperator(double,string)"/>
-	protected bool EvaluateRangeOperator(float number, string condition) {
-		return EvaluateRangeOperator((double)number, condition);
+	/// <inheritdoc cref="EvaluateRangeOperator(double)"/>
+	protected bool EvaluateRangeOperator(float value) {
+		return EvaluateRangeOperator((double)value);
+	}
+
+	/// <inheritdoc cref="EvaluateRangeOperator(double)"/>
+	protected bool EvaluateRangeOperator(float value, RangeOperator<double> condition) {
+		return EvaluateRangeOperator((double)value, condition);
+	}
+
+	/// <inheritdoc cref="EvaluateRangeOperator(double,RangeOperator&lt;double&gt;)"/>
+	protected bool EvaluateRangeOperator(double value) {
+		return EvaluateRangeOperator(value, Range);
 	}
 
 	/// <summary>
 	/// Evaluates a range operator.
 	/// </summary>
-	/// <param name="value">The current value</param>
+	/// <param name="value">The current value.</param>
 	/// <param name="condition">The range of values to check.</param>
 	/// <returns></returns>
-	protected bool EvaluateRangeOperator(double value, string condition) {
-		// Splitting the condition string by ".."
-		string[] parts = condition.Split("..");
-
-		if(parts.Length == 1) {
-			// Case when there's only one number in the condition
-			double target;
-			if(double.TryParse(parts[0], out target)) {
-				return value == target;
-			} else {
-				// Invalid input
-				return false;
-			}
-		}
-		if(parts.Length == 2) {
-			// Case when there's a range specified
-			double lowerBound, upperBound;
-
-			if(parts[0] == "") {
-				lowerBound = double.MinValue;
-			} else {
-				if(!double.TryParse(parts[0], out lowerBound)) {
-					// Invalid input
-					return false;
-				}
-			}
-
-			if(parts[1] == "") {
-				upperBound = double.MaxValue;
-			} else {
-				if(!double.TryParse(parts[1], out upperBound)) {
-					// Invalid input
-					return false;
-				}
-			}
-
-			return (value >= lowerBound && value <= upperBound);
-		}
-		return false;
+	protected bool EvaluateRangeOperator(double value, RangeOperator<double> condition) {
+		return condition.EvaluateRangeOperator(value);
 	}
 
 	protected bool ValidateRangeOperator(string condition, out IValidatable.ValidationResult result) {
+		return ValidateRangeOperator(condition, out _range, out result);
+	}
+
+	protected static bool ValidateRangeOperator(string condition, out RangeOperator<double> range, out IValidatable.ValidationResult result) {
+		range = infinityRange;
 		result = null!;
 		if(string.IsNullOrEmpty(condition)) {
 			result = new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Range operator can not be missing or empty!");
 			return false;
 		}
 
-		string[] parts = condition.Split("..");
-
+		string[] parts = condition.Split("..", StringSplitOptions.None);
 
 		switch(parts.Length) {
 			case 1:
 				// Case when there's only one number in the condition
-				double target;
-				if(!double.TryParse(parts[0], out target))
+				if(double.TryParse(parts[0], out double target))
+					range = new(target, target);
+				else
 					result = new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Failed to parse: '{parts[0]}' as a number!");
 				break;
 			case 2:
 				// Case when there's a range specified
 				double lowerBound, upperBound;
 
-				if(parts[0] == "") {
-					lowerBound = double.MinValue;
+				if(string.IsNullOrEmpty(parts[0])) {
+					lowerBound = double.NegativeInfinity;
 				} else {
 					if(!double.TryParse(parts[0], out lowerBound)) {
 						// Invalid input
@@ -128,17 +121,22 @@ public abstract class Condition : IValidatable {
 					}
 				}
 
-				if(parts[1] == "") {
-					upperBound = double.MaxValue;
+				if(string.IsNullOrEmpty(parts[1])) {
+					upperBound = double.PositiveInfinity;
 				} else {
 					if(!double.TryParse(parts[1], out upperBound)) {
 						// Invalid input
 						result = new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Failed to parse: '{parts[1]}' as a number!");
 					}
 				}
+
+				if(result == null)
+					range = new(lowerBound, upperBound);
 				break;
 			case > 2:
 				result = new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Range operator: '{condition}' uses .. more than once!");
+				break;
+			default:
 				break;
 		}
 
