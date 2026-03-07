@@ -35,7 +35,7 @@ static class AudioSourcePatch {
 			if(replacement == null) return false;
 
 			AudioSourceAdditionalData additionalData = __instance.GetAdditionalData();
-			if(group?.Parent?.UpdateEveryFrame != true) {
+			if(group?.UpdateEveryFrame != true) {
 				clip = replacement;
 
 				return true;

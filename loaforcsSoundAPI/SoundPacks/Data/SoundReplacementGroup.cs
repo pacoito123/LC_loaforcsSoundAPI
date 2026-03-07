@@ -32,6 +32,7 @@ public class SoundReplacementGroup : Conditional {
 	public List<string> Matches { get; private set; }
 	public List<SoundInstance> Sounds { get; private set; } = [];
 
+	public bool UpdateEveryFrame { get; internal set; }
 
 	public override List<IValidatable.ValidationResult> Validate() {
 		List<IValidatable.ValidationResult> results = base.Validate();

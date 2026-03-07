@@ -85,6 +85,8 @@ static class SoundPackLoadPipeline {
 				foreach(SoundReplacementGroup replacementGroup in collection.Replacements) {
 					SoundPackDataHandler.AddReplacement(replacementGroup);
 
+					if(collection.UpdateEveryFrame) replacementGroup.UpdateEveryFrame = true;
+
 					// finally actually load sounds!
 					foreach(SoundInstance soundReplacement in replacementGroup.Sounds) {
 						if(soundReplacement.Condition is ConstantCondition constant && constant.Value == false) {

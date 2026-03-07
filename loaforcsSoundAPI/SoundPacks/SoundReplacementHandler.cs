@@ -78,7 +78,7 @@ static class SoundReplacementHandler {
 
 		ArrayPool<string>.Shared.Return(name);
 
-		if(group?.Parent?.UpdateEveryFrame == true) Debuggers.UpdateEveryFrame?.Log("swapped to a clip that uses update_every_frame !!!");
+		if(group?.UpdateEveryFrame == true) Debuggers.UpdateEveryFrame?.Log("swapped to a clip that uses update_every_frame !!!");
 
 		return true;
 	}

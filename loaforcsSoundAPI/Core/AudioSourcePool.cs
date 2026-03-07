@@ -68,7 +68,7 @@ public sealed class AudioSourcePool : MonoBehaviour {
     }
 
     private void Update() {
-        if(pooledAdditionalData.ReplacedWith?.Parent?.UpdateEveryFrame != true) return;
+        if(pooledAdditionalData.ReplacedWith?.UpdateEveryFrame != true) return;
 
         // Debuggers.UpdateEveryFrame?.Log($"success: updating every frame for {pooledSource.name}");
 

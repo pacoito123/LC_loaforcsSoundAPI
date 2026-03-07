@@ -112,7 +112,7 @@ public class AudioSourceAdditionalData {
 	}
 
 	bool RequiresUpdateFunction() {
-		return ReplacedWith != null && ReplacedWith.Parent.UpdateEveryFrame && !IsPooled;
+		return ReplacedWith != null && ReplacedWith.UpdateEveryFrame && !IsPooled;
 	}
 
 	bool AudioSourceIsPlaying() {

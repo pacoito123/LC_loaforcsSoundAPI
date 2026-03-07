@@ -24,7 +24,6 @@ public class SoundReplacementCollection : Conditional, IFilePathAware, IPackData
 
 	public bool UpdateEveryFrame { get; private set; }
 
-
 	public bool Synced { get; private set; }
 
 	public List<SoundReplacementGroup> Replacements { get; private set; } = [];
