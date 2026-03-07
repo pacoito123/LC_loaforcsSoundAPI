@@ -20,6 +20,10 @@ source = "../bin/Release/netstandard2.1/me.loaforc.soundapi.dll"
 target = "BepInEx/plugins/loaforcsSoundAPI/"
 
 [[build.copy]]
+source = "../../loaforcsSoundAPI.Patcher/bin/Release/netstandard2.1/me.loaforc.soundapi.patcher.dll"
+target = "BepInEx/patchers/"
+
+[[build.copy]]
 source = "../../LICENSE"
 target = "LICENSE"
 

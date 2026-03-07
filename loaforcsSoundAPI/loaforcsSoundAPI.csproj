@@ -58,6 +58,15 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.*" PrivateAssets="all"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\loaforcsSoundAPI.Patcher\loaforcsSoundAPI.Patcher.csproj">
+            <PrivateAssets>all</PrivateAssets>
+            <Project>{C007F76C-ED3F-48CB-AEFB-52FE9E80E583}</Project>
+            <Name>loaforcsSoundAPI.Patcher</Name>
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+    </ItemGroup>
+
     <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
         <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all"/>
     </ItemGroup>

@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "loaforcsSoundAPI", "loaforcsSoundAPI\loaforcsSoundAPI.csproj", "{DEBBEFBD-97F6-4276-AEA8-9466118ECFBA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "loaforcsSoundAPI.Patcher", "loaforcsSoundAPI\loaforcsSoundAPI.Patcher\loaforcsSoundAPI.Patcher.csproj", "{C007F76C-ED3F-48CB-AEFB-52FE9E80E583}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{DEBBEFBD-97F6-4276-AEA8-9466118ECFBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DEBBEFBD-97F6-4276-AEA8-9466118ECFBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DEBBEFBD-97F6-4276-AEA8-9466118ECFBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C007F76C-ED3F-48CB-AEFB-52FE9E80E583}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C007F76C-ED3F-48CB-AEFB-52FE9E80E583}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C007F76C-ED3F-48CB-AEFB-52FE9E80E583}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C007F76C-ED3F-48CB-AEFB-52FE9E80E583}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
