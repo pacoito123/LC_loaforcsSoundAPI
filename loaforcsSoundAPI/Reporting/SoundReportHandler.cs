@@ -104,11 +104,12 @@ public static class SoundReportHandler {
 
 		_reportSections(outputFile, report);
 		
-		outputFile.Flush();
 		outputFile.Close();
 		
 		using StreamWriter jsonFile = new StreamWriter(Path.Combine(GetFolder(), GetFileName(report, ".json")));
 		jsonFile.WriteLine(JsonConvert.SerializeObject(report, Formatting.Indented));
+		
+		jsonFile.Close();
 	}
 
 	public static void WriteList(string header, StreamWriter stream, ICollection<string> list) {

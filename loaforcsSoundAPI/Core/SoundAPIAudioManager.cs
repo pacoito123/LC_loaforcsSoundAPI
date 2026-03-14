@@ -16,7 +16,7 @@ class SoundAPIAudioManager : MonoBehaviour {
 
 	void Awake() {
 		SceneManager.sceneLoaded += (_, _) => {
-			if(!Instance)
+			if(Instance == null)
 				SpawnManager();
 
 			RunCleanup();

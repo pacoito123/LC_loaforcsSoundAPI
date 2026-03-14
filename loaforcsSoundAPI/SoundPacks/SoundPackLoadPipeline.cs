@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BepInEx;
@@ -44,7 +42,7 @@ static class SoundPackLoadPipeline {
 	}
 
 	// todo: clip sharing/single-loading
-	internal static async void StartPipeline() {
+	internal static async Task StartPipeline() {
 		Stopwatch completeLoadingTimer = Stopwatch.StartNew();
 		Stopwatch timer = Stopwatch.StartNew();
 
@@ -125,9 +123,9 @@ static class SoundPackLoadPipeline {
 		ConcurrentQueue<LoadSoundOperation> queuedOperations = new ConcurrentQueue<LoadSoundOperation>();
 		ConcurrentBag<Exception> threadPoolExceptions = [];
 
-		// TODO: fix me, this is not good logic.
-		for(int i = 0; i < 16; i++) {
-			new Thread(() => {
+		// TODO: fix me? this is probably still not good logic.
+		for(int i = 0; i < Environment.ProcessorCount; i++) {
+			new Thread(threadIndex => {
 				LoadSoundOperation operation;
 				while(queuedOperations.Count == 0 && !threadsShouldExit) {
 					Thread.Yield();
@@ -138,10 +136,12 @@ static class SoundPackLoadPipeline {
 
 				while(queuedOperations.TryDequeue(out operation)) {
 					try {
-						AudioClip clip = DownloadHandlerAudioClip.GetContent(operation.WebRequest);
+						DownloadHandlerAudioClip downloadHandler = DownloadHandler.GetCheckedDownloader<DownloadHandlerAudioClip>(operation.WebRequest);
+						downloadHandler.compressed = true;
+						AudioClip clip = downloadHandler.audioClip;
 						operation.Sound.Clip = clip;
 						operation.WebRequest.Dispose();
-						Debuggers.SoundReplacementLoader?.Log($"clip generated: {clip.name}");
+						Debuggers.SoundReplacementLoader?.Log($"clip generated: {clip.name} on thread {threadIndex}");
 
 						operation.IsDone = true;
 					} catch(Exception exception) {
@@ -150,14 +150,17 @@ static class SoundPackLoadPipeline {
 				}
 
 				Interlocked.Decrement(ref _activeThreads);
-			}).Start();
+			}).Start(i + 1);
 		}
 
 		// Step 5: Block game from progressing until all audio is loaded
 		while(webRequestOperations.Count > 0) {
-			foreach(LoadSoundOperation operation in webRequestOperations.ToList().Where(operation => operation.IsReady)) { // .ToList() here is so we can modify the current list without causing an exception
-				queuedOperations.Enqueue(operation); // give to threads to do work
-				webRequestOperations.Remove(operation);
+			for(int i = 0; i < webRequestOperations.Count; i++) {
+				LoadSoundOperation? operation = webRequestOperations[i];
+				if(operation != null && operation.IsReady) {
+					queuedOperations.Enqueue(operation); // give to threads to do work
+					webRequestOperations.Remove(operation);
+				}
 			}
 
 			if(!displayedHalfwayMessage && webRequestOperations.Count < amountOfOperations / 2) {
@@ -172,8 +175,10 @@ static class SoundPackLoadPipeline {
 		threadsShouldExit = true;
 
 		// Step 6: Wait.
-		while(_activeThreads > 0 || webRequestOperations.Any(operation => !operation.IsDone)) {
+		bool allDone = false;
+		while(_activeThreads > 0 || !allDone) {
 			Thread.Yield();
+			allDone = webRequestOperations.FindIndex(operation => !operation.IsDone) == -1;
 		}
 
 		loaforcsSoundAPI.Logger.LogInfo($"(Step 6) Took {timer.ElapsedMilliseconds}ms to finish loading audio clips from files");
@@ -235,7 +240,7 @@ static class SoundPackLoadPipeline {
 		}
 
 		Debuggers.SoundReplacementLoader?.Log($"loaded '{packs.Count}' packs.");
-		return packs.Values.ToList();
+		return [.. packs.Values];
 	}
 
 	static List<SoundReplacementCollection> LoadSoundReplacementCollections(SoundPack pack, ref SkippedResults skippedStats) {
@@ -274,7 +279,8 @@ static class SoundPackLoadPipeline {
 				List<IValidatable.ValidationResult> validationResults = replacementGroup.Validate();
 
 				// Convert mappings
-				foreach(string match in replacementGroup.Matches.ToList()) { // .ToList to avoid list exception or whatever
+				List<string> matches = [.. replacementGroup.Matches];
+				foreach(string match in matches) {
 					if(!match.StartsWith("#")) continue;
 
 					replacementGroup.Matches.Remove(match);
@@ -303,7 +309,11 @@ static class SoundPackLoadPipeline {
 
 
 				// Imply "*:object:clip" from "object:clip"
-				List<string> corrected = replacementGroup.Matches.Select(match => match.Split(":").Length == 2 ? $"*:{match}" : match).ToList();
+				string[] corrected = new string[replacementGroup.Matches.Count];
+				for(int i = 0; i < corrected.Length; i++) {
+					string match = replacementGroup.Matches[i];
+					corrected[i] = match.Split(":").Length == 2 ? $"*:{match}" : match;
+				}
 
 				replacementGroup.Matches.Clear();
 				replacementGroup.Matches.AddRange(corrected);

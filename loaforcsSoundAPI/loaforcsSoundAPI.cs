@@ -18,6 +18,9 @@ class loaforcsSoundAPI : BaseUnityPlugin {
 	static loaforcsSoundAPI _instance;
 
 	void Awake() {
+		// Subscribe to Action from preloader.
+		LoaforcsSoundAPIPatcher.Instance.ChainloaderFinish += async () => await SoundPackLoadPipeline.StartPipeline();
+
 		_instance = this;
 		Logger = BepInEx.Logging.Logger.CreateLogSource(MyPluginInfo.PLUGIN_GUID);
 		Config.SaveOnConfigSet = false;
@@ -27,9 +30,6 @@ class loaforcsSoundAPI : BaseUnityPlugin {
 		SoundReportHandler.Bind(Config);
 		PatchConfig.Bind(Config);
 		PackLoadingConfig.Bind(Config);
-
-		// Subscribe to Action from preloader.
-		LoaforcsSoundAPIPatcher.Instance.ChainloaderFinish += SoundPackLoadPipeline.StartPipeline;
 
 		Logger.LogInfo("Running patches");
 		Harmony harmony = Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), MyPluginInfo.PLUGIN_GUID);
