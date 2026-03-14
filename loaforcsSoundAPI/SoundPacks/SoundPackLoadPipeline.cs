@@ -140,6 +140,7 @@ static class SoundPackLoadPipeline {
 						downloadHandler.compressed = true;
 						AudioClip clip = downloadHandler.audioClip;
 						operation.Sound.Clip = clip;
+						_ = SoundAPIAudioManager.loadedClips.Add(clip);
 						operation.WebRequest.Dispose();
 						Debuggers.SoundReplacementLoader?.Log($"clip generated: {clip.name} on thread {threadIndex}");
 

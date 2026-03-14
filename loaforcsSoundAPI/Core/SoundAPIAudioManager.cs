@@ -11,6 +11,7 @@ namespace loaforcsSoundAPI.Core;
 class SoundAPIAudioManager : MonoBehaviour {
 	internal static readonly Dictionary<AudioSource, AudioSourceAdditionalData> audioSourceData = [];
 	internal static readonly List<AudioSourceAdditionalData> liveAudioSourceData = []; // this is a list of audio source additonal data's that should have their .Update() called
+	internal static readonly HashSet<AudioClip> loadedClips = [];
 
 	static SoundAPIAudioManager Instance;
 
