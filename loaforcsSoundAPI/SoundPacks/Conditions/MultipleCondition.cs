@@ -71,3 +71,39 @@ public abstract class MultipleCondition<T> : Condition {
     /// <returns>Whether the given value is present in the list of accepted values or not.</returns>
     protected abstract bool CheckValue(T value);
 }
+
+public abstract class MultipleCondition<T, TContext> : MultipleCondition<T>, IContextCondition<TContext> where TContext : IContext {
+    protected TContext? _currentContext;
+
+    /// <inheritdoc/>
+    public override bool Evaluate(IContext context) {
+        if(context is not TContext type) return EvaluateFallback(context); // mismatching context, use fallback
+
+        return EvaluateWithContext(type);
+    }
+
+    /// <inheritdoc/>
+    public bool EvaluateWithContext(TContext context) {
+        _currentContext ??= context;
+
+        return base.Evaluate(context);
+    }
+
+    /// <inheritdoc/>
+    public virtual bool EvaluateFallback(IContext context) {
+        return false;
+    }
+
+    /// <inheritdoc/>
+    protected override bool CheckValue(T value) {
+        return CheckValueWithContext(value, _currentContext);
+    }
+
+    /// <summary>
+    ///     Check if the given value of type <typeparamref name="T"/> is inside the list of accepted values for this <c>Condition</c>.
+    /// </summary>
+    /// <param name="value">Value of type <typeparamref name="T"/> to check.</param>
+    /// <param name="context">Context of type <typeparamref name="TContext"/> to check.</param>
+    /// <returns>Whether the given value is present in the list of accepted values or not.</returns>
+    protected abstract bool CheckValueWithContext(T value, TContext? context);
+}

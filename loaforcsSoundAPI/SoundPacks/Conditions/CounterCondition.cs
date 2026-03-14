@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using JetBrains.Annotations;
-using loaforcsSoundAPI.Core.Data;
+﻿using loaforcsSoundAPI.Core;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 
 namespace loaforcsSoundAPI.SoundPacks.Conditions;
@@ -16,14 +14,8 @@ namespace loaforcsSoundAPI.SoundPacks.Conditions;
 ///		<id>counter</id>
 /// </soundapi>
 [SoundAPICondition("counter")]
-public class CounterCondition : Condition {
-	/// <summary>
-	/// Range of values to check against
-	/// </summary>
-	/// <value>ValueRange</value>
-	/// <example>1</example>
-	[CanBeNull]
-	public string Value { get; private set; } = null!;
+public class CounterCondition : RangeCondition<int> {
+	protected override RangeOperator<int> DefaultRange => new(int.MinValue, int.MaxValue);
 
 	/// <summary>
 	/// Resets after reaching this number. Inclusive.
@@ -32,7 +24,7 @@ public class CounterCondition : Condition {
 	/// <example>5</example>
 	public int? ResetsAt { get; private set; }
 
-	int _count;
+	private int _count;
 
 	public override bool Evaluate(IContext context) {
 		LogDebug("counter", $"counting: {_count} -> {_count + 1}");
@@ -47,9 +39,11 @@ public class CounterCondition : Condition {
 		return result;
 	}
 
-	public override List<IValidatable.ValidationResult> Validate() {
-		if(!ValidateRangeOperator(Value, out IValidatable.ValidationResult result))
-			return [result];
-		return [];
+	protected override bool TryParseValue(string parameter, ref int value) {
+		return string.IsNullOrEmpty(parameter) || int.TryParse(parameter, out value);
+	}
+
+	private static void LogDebug(string name, object message) {
+		Debuggers.ConditionsInfo?.Log($"({name}) {message}");
 	}
 }
