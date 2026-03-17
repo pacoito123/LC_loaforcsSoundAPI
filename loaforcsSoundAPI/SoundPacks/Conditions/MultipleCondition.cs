@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using JetBrains.Annotations;
+using loaforcsSoundAPI.Core;
 using loaforcsSoundAPI.Core.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using UnityEngine.SceneManagement;
@@ -19,7 +20,7 @@ public abstract class MultipleCondition<T> : Condition {
     public char Separator { get; protected set; } = ',';
 
     protected internal override void OnRegistered() {
-        if(Value == null) return;
+        if(string.IsNullOrEmpty(Value)) return;
         SceneManager.sceneLoaded += PopulateValues;
     }
 
@@ -30,9 +31,9 @@ public abstract class MultipleCondition<T> : Condition {
 
     /// <inheritdoc/>
     public override List<IValidatable.ValidationResult> Validate() {
-        SoundAPIConditionAttribute? attribute = GetType().GetCustomAttribute<SoundAPIConditionAttribute>();
+        SoundAPIConditionAttribute? attribute = GetType()?.GetCustomAttribute<SoundAPIConditionAttribute>();
         return !string.IsNullOrEmpty(Value) ? [] : [new(IValidatable.ResultType.FAIL,
-            $"Value field for a \"{attribute?.ID}\" condition in SoundPack '{Pack.Name}' is empty or missing!")];
+            $"Value field for one \"{attribute?.ID}\" condition in SoundPack '{Pack.Name}' is empty or missing!")];
     }
 
     private void PopulateValues(Scene scene, LoadSceneMode mode) {
@@ -50,6 +51,11 @@ public abstract class MultipleCondition<T> : Condition {
 
         Values = [.. foundValues];
         OnValuesPopulated();
+
+        if(Values.Length == 0 && Debuggers.SoundReplacementLoader != null) {
+            SoundAPIConditionAttribute? attribute = GetType()?.GetCustomAttribute<SoundAPIConditionAttribute>();
+            Pack.Logger.LogWarning($"[Debug-SoundReplacementLoader] Value field '{Value}' for one \"{attribute?.ID}\" condition in SoundPack '{Pack.Name}' returned no successful matches!");
+        }
     }
 
     protected virtual void OnValuesPopulated() {
