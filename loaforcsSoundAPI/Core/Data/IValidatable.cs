@@ -15,7 +15,7 @@ public interface IValidatable {
 	/// <returns>Non-successful validations</returns>
 	public List<ValidationResult> Validate();
 
-	public enum ResultType {
+	enum ResultType : byte {
 		WARN,
 		FAIL
 	}

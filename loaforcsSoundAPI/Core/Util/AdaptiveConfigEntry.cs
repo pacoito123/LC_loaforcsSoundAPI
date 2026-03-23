@@ -13,12 +13,12 @@ public class AdaptiveConfigEntry {
 
     public AdaptiveBool State { get; private set; }
     public bool DefaultValue { get; private set; }
-    
+
     public bool? OverrideValue { get; set; } // todo: add log message when two overrides happen.
-    
+
     public bool Value {
         get {
-            switch (State) {
+            switch(State) {
                 case AdaptiveBool.Enabled:
                     return true;
                 case AdaptiveBool.Disabled:
@@ -31,7 +31,7 @@ public class AdaptiveConfigEntry {
     }
 }
 
-public enum AdaptiveBool {
+public enum AdaptiveBool : byte {
     Automatic,
     Enabled,
     Disabled
