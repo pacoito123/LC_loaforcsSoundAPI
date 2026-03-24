@@ -23,6 +23,9 @@ static class AudioSourcePatch {
 
 			data.RealClip = replacement;
 			data.ReplacedWith = group;
+
+			if(group.Volume.HasValue)
+				__instance.volume = group.Volume.Value;
 		}
 
 		return true;

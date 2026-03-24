@@ -93,9 +93,13 @@ public class AudioSourceAdditionalData {
 		// Debuggers.UpdateEveryFrame?.Log($"success: updating every frame for {Source.name}");
 
 		IContext context = CurrentContext ?? DefaultConditionContext.DEFAULT;
-
 		SoundInstance? sound = ReplacedWith?.Sounds?.FirstOrDefault(x => x.Evaluate(context));
-		if(sound == null || sound.Clip == Source.clip) return;
+
+		if(sound == null) return;
+		if(sound.Parent?.Volume.HasValue == true)
+			Source.volume = sound.Parent.Volume.Value;
+
+		if(sound.Clip == Source.clip) return;
 		Debuggers.UpdateEveryFrame?.Log("new clip found, swapping!!");
 
 		float currentTime = Source.time;

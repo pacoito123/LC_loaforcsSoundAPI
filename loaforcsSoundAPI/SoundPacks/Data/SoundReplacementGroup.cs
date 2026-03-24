@@ -4,6 +4,7 @@ using System.Linq;
 using loaforcsSoundAPI.Core.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using Newtonsoft.Json;
+using UnityEngine;
 
 namespace loaforcsSoundAPI.SoundPacks.Data;
 
@@ -33,6 +34,7 @@ public class SoundReplacementGroup : Conditional {
 	public List<SoundInstance> Sounds { get; private set; } = [];
 
 	public bool UpdateEveryFrame { get; internal set; }
+	public float? Volume { get; internal set; }
 
 	public override List<IValidatable.ValidationResult> Validate() {
 		List<IValidatable.ValidationResult> results = base.Validate();
@@ -54,6 +56,9 @@ public class SoundReplacementGroup : Conditional {
 				results.Add(new IValidatable.ValidationResult(IValidatable.ResultType.WARN, $"'{match}' has more than 3 parts! SoundAPI will handle this as '{match[0]}:{match[1]}:{match[2]}', discarding the rest!"));
 			}
 		}
+
+		if(Volume.HasValue)
+			Volume = Mathf.Clamp01(Volume.Value);
 
 		return results;
 	}
