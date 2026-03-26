@@ -70,7 +70,7 @@ static class SoundReplacementHandler {
 
 		if(
 			!TryProcessName(ref name, source, clip, isOneShot) ||
-			!TryGetReplacementClip(name, out group, out replacement, sourceData.CurrentContext ?? DefaultConditionContext.DEFAULT)
+			!TryGetReplacementClip(name, out group, out replacement, sourceData.CurrentContext ?? new DefaultContext(sourceData.Source))
 		) {
 			ArrayPool<string>.Shared.Return(name);
 			return false;

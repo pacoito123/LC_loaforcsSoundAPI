@@ -78,7 +78,7 @@ public abstract class MultipleCondition<T> : Condition {
     protected abstract bool CheckValue(T value);
 }
 
-public abstract class MultipleCondition<T, TContext> : MultipleCondition<T>, IContextCondition<TContext> where TContext : IContext {
+public abstract class MultipleCondition<T, TContext> : MultipleCondition<T>, IContextCondition<TContext> where TContext : struct, IContext {
     protected TContext? _currentContext;
 
     /// <inheritdoc/>
@@ -102,7 +102,7 @@ public abstract class MultipleCondition<T, TContext> : MultipleCondition<T>, ICo
 
     /// <inheritdoc/>
     protected override bool CheckValue(T value) {
-        return CheckValueWithContext(value, _currentContext);
+        return _currentContext.HasValue && CheckValueWithContext(value, _currentContext.Value);
     }
 
     /// <summary>
@@ -111,5 +111,5 @@ public abstract class MultipleCondition<T, TContext> : MultipleCondition<T>, ICo
     /// <param name="value">Value of type <typeparamref name="T"/> to check.</param>
     /// <param name="context">Context of type <typeparamref name="TContext"/> to check.</param>
     /// <returns>Whether the given value is present in the list of accepted values or not.</returns>
-    protected abstract bool CheckValueWithContext(T value, TContext? context);
+    protected abstract bool CheckValueWithContext(T value, TContext context);
 }

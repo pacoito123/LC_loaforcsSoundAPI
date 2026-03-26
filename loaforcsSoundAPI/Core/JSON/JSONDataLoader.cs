@@ -128,7 +128,7 @@ public static class JSONDataLoader {
 
 			if (condition.Constant == true) {
 				return 
-					condition.Evaluate(DefaultConditionContext.DEFAULT) ? 
+					condition.Evaluate(new DefaultContext()) ? 
 					ConstantCondition.TRUE : 
 					ConstantCondition.FALSE;
 			}

@@ -144,7 +144,7 @@ public abstract class RangeCondition<T> : Condition where T : struct, IComparabl
     protected abstract bool TryParseValue(string parameter, ref T value);
 }
 
-public abstract class RangeCondition<T, TContext> : RangeCondition<T>, IContextCondition<TContext> where T : struct, IComparable<T> where TContext : IContext {
+public abstract class RangeCondition<T, TContext> : RangeCondition<T>, IContextCondition<TContext> where T : struct, IComparable<T> where TContext : struct, IContext {
     /// <inheritdoc/>
 	public override bool Evaluate(IContext context) {
         if(context is not TContext type) return EvaluateFallback(context); // mismatching context, use fallback

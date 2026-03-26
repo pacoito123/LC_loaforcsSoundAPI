@@ -1,9 +1,13 @@
+using UnityEngine;
+
 namespace loaforcsSoundAPI.SoundPacks.Data.Conditions;
 
 /// <summary>
 /// Context interface.
 /// </summary>
-public interface IContext;
+public interface IContext {
+    AudioSource? Source { get; }
+}
 
 /// <summary>
 /// Condition with Context interface.
@@ -32,8 +36,6 @@ public interface IContextCondition<TContext> where TContext : IContext {
     bool EvaluateFallback(IContext context);
 }
 
-internal sealed class DefaultConditionContext : IContext {
-    private DefaultConditionContext() { }
-
-    internal static readonly DefaultConditionContext DEFAULT = new();
+internal struct DefaultContext(AudioSource? source) : IContext {
+    public readonly AudioSource? Source => source;
 }

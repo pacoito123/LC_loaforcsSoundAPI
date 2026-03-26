@@ -82,7 +82,7 @@ sealed class ConstantCondition : Condition {
 /// <seealso cref="Condition"/>
 /// <seealso cref="IContext"/>
 /// <typeparam name="TContext">Type of context</typeparam>
-public abstract class Condition<TContext> : Condition, IContextCondition<TContext> where TContext : IContext {
+public abstract class Condition<TContext> : Condition, IContextCondition<TContext> where TContext : struct, IContext {
 	/// <inheritdoc/>
 	public override bool Evaluate(IContext context) {
 		if(context is not TContext type) return EvaluateFallback(context); // mismatching context, use fallback

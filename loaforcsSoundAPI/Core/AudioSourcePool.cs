@@ -72,8 +72,7 @@ public sealed class AudioSourcePool : MonoBehaviour {
 
         // Debuggers.UpdateEveryFrame?.Log($"success: updating every frame for {pooledSource.name}");
 
-        IContext context = pooledAdditionalData.CurrentContext ?? DefaultConditionContext.DEFAULT;
-        SoundInstance? sound = pooledAdditionalData.ReplacedWith?.Sounds.FirstOrDefault(x => x.Evaluate(context));
+        SoundInstance? sound = pooledAdditionalData.ReplacedWith?.Sounds.FirstOrDefault(x => x.Evaluate(pooledAdditionalData.CurrentContext));
 
         if(sound == null) return;
         if(sound.Parent?.Volume.HasValue == true)
