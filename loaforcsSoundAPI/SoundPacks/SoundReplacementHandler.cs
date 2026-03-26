@@ -62,6 +62,7 @@ static class SoundReplacementHandler {
 			return false;
 
 		AudioSourceAdditionalData sourceData = source.GetAdditionalData();
+		sourceData.CurrentContext ??= new DefaultContext(sourceData.Source);
 		// if(sourceData.ReplacedWith?.Parent?.UpdateEveryFrame == true) return false; // the SoundAPIAudioManager is currently handling it, therefore we should not intervene.
 		if(sourceData.DisableReplacing) return false; // another mod has disabled replacing
 		if(sourceData.IsPooled) return false;
@@ -70,7 +71,7 @@ static class SoundReplacementHandler {
 
 		if(
 			!TryProcessName(ref name, source, clip, isOneShot) ||
-			!TryGetReplacementClip(name, out group, out replacement, sourceData.CurrentContext ?? new DefaultContext(sourceData.Source))
+			!TryGetReplacementClip(name, out group, out replacement, sourceData.CurrentContext)
 		) {
 			ArrayPool<string>.Shared.Return(name);
 			return false;
