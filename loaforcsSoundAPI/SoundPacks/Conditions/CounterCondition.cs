@@ -31,7 +31,7 @@ public class CounterCondition : RangeCondition<int> {
 		_count++;
 		bool result = EvaluateRangeOperator(_count);
 		LogDebug("counter", $"is {_count} in range ({Value})? {result}");
-		if(_count >= ResetsAt) {
+		if(ResetsAt.HasValue && _count >= ResetsAt.Value) {
 			_count = 0;
 			LogDebug("counter", $"reset count to 0.");
 		}
