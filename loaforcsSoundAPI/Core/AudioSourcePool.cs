@@ -1,4 +1,3 @@
-using System.Linq;
 using loaforcsSoundAPI.Core.Util.Extensions;
 using loaforcsSoundAPI.SoundPacks.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
@@ -73,7 +72,7 @@ public sealed class AudioSourcePool : MonoBehaviour {
         // Debuggers.UpdateEveryFrame?.Log($"success: updating every frame for {pooledSource.name}");
 
 		pooledAdditionalData.CurrentContext ??= new DefaultContext(pooledAdditionalData.Source);
-        SoundInstance? sound = pooledAdditionalData.ReplacedWith?.Sounds.FirstOrDefault(x => x.Evaluate(pooledAdditionalData.CurrentContext));
+        SoundInstance? sound = pooledAdditionalData.ReplacedWith?.Sounds.Find(x => x.Evaluate(pooledAdditionalData.CurrentContext));
 
         if(sound == null) return;
         if(sound.Parent?.Volume.HasValue == true)

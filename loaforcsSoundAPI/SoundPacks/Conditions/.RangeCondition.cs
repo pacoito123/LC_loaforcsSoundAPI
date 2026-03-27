@@ -132,7 +132,18 @@ public abstract class RangeCondition<T> : Condition where T : struct, IComparabl
     /// <param name="result">Unsuccessful validations, if any were found.</param>
     /// <returns>Whether the validation succeeded or not.</returns>
     protected bool ValidateRangeOperator(string condition, out IValidatable.ValidationResult result) {
-        return RangeOperator<T>.ValidateRangeOperator(condition, out _range, out result, TryParseValue, DefaultRange);
+        return ValidateRangeOperator(condition, out _range, out result);
+    }
+
+    /// <summary>
+    /// Validates a range operator's formatting.
+    /// </summary>
+    /// <param name="condition">Value to attempt to parse into a range operator.</param>
+    /// <param name="range">Validated range operator given as an out parameter.</param>
+    /// <param name="result">Unsuccessful validations, if any were found.</param>
+    /// <returns>Whether the validation succeeded or not.</returns>
+    protected bool ValidateRangeOperator(string condition, out RangeOperator<T> range, out IValidatable.ValidationResult result) {
+        return RangeOperator<T>.ValidateRangeOperator(condition, out range, out result, TryParseValue, DefaultRange);
     }
 
     /// <summary>

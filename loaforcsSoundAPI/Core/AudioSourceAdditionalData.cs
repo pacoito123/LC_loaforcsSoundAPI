@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using loaforcsSoundAPI.SoundPacks.Data;
+﻿using loaforcsSoundAPI.SoundPacks.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using UnityEngine;
 
@@ -93,7 +92,7 @@ public class AudioSourceAdditionalData {
 		// Debuggers.UpdateEveryFrame?.Log($"success: updating every frame for {Source.name}");
 
 		CurrentContext ??= new DefaultContext(Source);
-		SoundInstance? sound = ReplacedWith?.Sounds?.FirstOrDefault(x => x.Evaluate(CurrentContext));
+		SoundInstance? sound = ReplacedWith?.Sounds?.Find(x => x.Evaluate(CurrentContext));
 
 		if(sound == null) return;
 		if(sound.Parent?.Volume.HasValue == true)
