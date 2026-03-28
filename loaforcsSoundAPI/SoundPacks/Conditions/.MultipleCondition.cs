@@ -31,9 +31,22 @@ public abstract class MultipleCondition<T> : Condition {
 
     /// <inheritdoc/>
     public override List<IValidatable.ValidationResult> Validate() {
-        SoundAPIConditionAttribute? attribute = GetType()?.GetCustomAttribute<SoundAPIConditionAttribute>();
-        return !string.IsNullOrEmpty(Value) ? [] : [new(IValidatable.ResultType.FAIL,
-            $"Value field for one \"{attribute?.ID}\" condition in SoundPack '{Pack.Name}' is empty or missing!")];
+        if(!string.IsNullOrEmpty(Value)) return [];
+
+        SoundAPIConditionAttribute[] attributes = [.. GetType().GetCustomAttributes<SoundAPIConditionAttribute>()];
+        string str = string.Empty;
+
+        if(attributes.Length != 1)
+            for(int i = 0; i < attributes.Length; i++) {
+                if(i > 0)
+                    str += (i != attributes.Length - 1) ? "\", \"" : "\", or \"";
+                str += attributes[i].ID;
+            }
+        else
+            str += attributes[0].ID;
+
+        return [new(IValidatable.ResultType.FAIL,
+            $"Value field for one \"{str}\" condition in SoundPack '{Pack.Name}' is empty or missing!")];
     }
 
     private void PopulateValues(Scene scene, LoadSceneMode mode) {

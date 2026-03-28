@@ -56,16 +56,27 @@ public abstract class AnimatorCondition : Condition {
         if(!string.IsNullOrEmpty(Parameter)) {
             _parameterID = Animator.StringToHash(Parameter);
 
-            SoundAPIConditionAttribute? attribute = GetType()?.GetCustomAttribute<SoundAPIConditionAttribute>();
+            SoundAPIConditionAttribute[] attributes = [.. GetType().GetCustomAttributes<SoundAPIConditionAttribute>()];
+            string str = string.Empty;
+
+            if(attributes.Length != 1)
+                for(int i = 0; i < attributes.Length; i++) {
+                    if(i > 0)
+                        str += (i != attributes.Length - 1) ? "\", \"" : "\", or \"";
+                    str += attributes[i].ID;
+                }
+            else
+                str += attributes[0].ID;
+
             IValidatable.ValidationResult result = new(IValidatable.ResultType.FAIL,
-                $"ParameterType field for one \"{attribute?.ID}\" condition in SoundPack '{Pack.Name}' is empty, missing or invalid!");
+                $"ParameterType field for one \"{str}\" condition in SoundPack '{Pack.Name}' is empty, missing or invalid!");
 
             if(string.IsNullOrEmpty(ParameterType) || !Enum.TryParse(ParameterType, ignoreCase: true, out _parameterType)) return [result];
             if(!string.IsNullOrEmpty(Value)) {
                 switch(_parameterType) {
                     case AnimatorParamType.Bool:
                     case AnimatorParamType.Trigger:
-                        if(bool.TryParse(Value, out _value)) return [result];
+                        if(!bool.TryParse(Value, out _value)) return [result];
                         break;
                     case AnimatorParamType.Float:
                         if(!RangeOperator<float>.ValidateRangeOperator(Value, out _floatRange, out result, static (parameter, ref result) =>
