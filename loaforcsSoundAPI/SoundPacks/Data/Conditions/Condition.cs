@@ -19,13 +19,6 @@ public abstract class Condition : IValidatable {
 	protected SoundPack Pack => Parent.Pack;
 
 	/// <summary>
-	/// When a condition is explicitly set to 'constant' it will compute the value on load.
-	/// The 
-	/// todo: For the config condition the Constant value should be implied to be true
-	/// </summary>
-	public bool? Constant { get; private set; }
-
-	/// <summary>
 	///	Called upon the Condition being successfully registered, for any additional initialization.
 	/// </summary>
 	protected internal virtual void OnRegistered() { }
@@ -58,21 +51,6 @@ sealed class InvalidCondition(string type) : Condition {
 				new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"'{type}' is not a valid condition type!")
 			];
 		}
-	}
-}
-
-sealed class ConstantCondition : Condition {
-	public static ConstantCondition TRUE = new(true);
-	public static ConstantCondition FALSE = new(false);
-
-	public bool Value { get; private set; }
-
-	ConstantCondition(bool constant) {
-		Value = constant;
-	}
-
-	public override bool Evaluate(IContext context) {
-		return Value;
 	}
 }
 

@@ -66,8 +66,19 @@ public abstract class MultipleCondition<T> : Condition {
         OnValuesPopulated();
 
         if(Values.Length == 0 && Debuggers.SoundReplacementLoader != null) {
-            SoundAPIConditionAttribute? attribute = GetType()?.GetCustomAttribute<SoundAPIConditionAttribute>();
-            Pack.Logger.LogWarning($"[Debug-SoundReplacementLoader] Value field '{Value}' for one \"{attribute?.ID}\" condition in SoundPack '{Pack.Name}' returned no successful matches!");
+            SoundAPIConditionAttribute[] attributes = [.. GetType().GetCustomAttributes<SoundAPIConditionAttribute>()];
+            string str = string.Empty;
+
+            if(attributes.Length != 1)
+                for(int i = 0; i < attributes.Length; i++) {
+                    if(i > 0)
+                        str += (i != attributes.Length - 1) ? "\", \"" : "\", or \"";
+                    str += attributes[i].ID;
+                }
+            else
+                str += attributes[0].ID;
+
+            Pack.Logger.LogWarning($"[Debug-SoundReplacementLoader] Value field '{Value}' for one \"{str}\" condition in SoundPack '{Pack.Name}' returned no successful matches!");
         }
     }
 

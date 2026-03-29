@@ -12,12 +12,10 @@ using loaforcsSoundAPI.Core.Data;
 using loaforcsSoundAPI.Core.JSON;
 using loaforcsSoundAPI.Core.Util;
 using loaforcsSoundAPI.Reporting;
+using loaforcsSoundAPI.SoundPacks.Conditions;
 using loaforcsSoundAPI.SoundPacks.Data;
-using loaforcsSoundAPI.SoundPacks.Data.Conditions;
-using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
-using Random = UnityEngine.Random;
 
 namespace loaforcsSoundAPI.SoundPacks;
 
@@ -39,9 +37,9 @@ static class SoundPackLoadPipeline {
 		public int Collections;
 		public int Groups;
 		public int Sounds;
+		public int Shared;
 	}
 
-	// todo: clip sharing/single-loading
 	internal static async Task StartPipeline() {
 		Stopwatch completeLoadingTimer = Stopwatch.StartNew();
 		Stopwatch timer = Stopwatch.StartNew();
@@ -75,6 +73,9 @@ static class SoundPackLoadPipeline {
 		loaforcsSoundAPI.Logger.LogInfo($"(Step 2) Loading Sound-pack mappings ('{mappings.Count}') took {timer.ElapsedMilliseconds}ms");
 		timer.Restart();
 
+		List<SoundInstance> sharedSounds = [];
+		HashSet<string> uniquePaths = [];
+
 		SkippedResults skippedStats = new SkippedResults();
 		// Step 3: Load sound replacement collections data and begin loading audio
 		foreach(SoundPack pack in packs) {
@@ -85,15 +86,23 @@ static class SoundPackLoadPipeline {
 
 					if(collection.UpdateEveryFrame) replacementGroup.UpdateEveryFrame = true;
 
+					int skippedSounds = replacementGroup.Sounds.RemoveAll(soundReplacement => soundReplacement.Condition is ConfigCondition soundConfig && soundConfig.PreventLoading);
+					if(skippedSounds > 0) {
+						Debuggers.SoundReplacementLoader?.Log($"Skipping {skippedSounds} sound(s) in '{LogFormats.FormatFilePath(collection.FilePath)}' due to being disabled by config!");
+						skippedStats.Sounds += skippedSounds;
+					}
+
 					// finally actually load sounds!
 					foreach(SoundInstance soundReplacement in replacementGroup.Sounds) {
-						if(soundReplacement.Condition is ConstantCondition constant && constant.Value == false) {
-							Debuggers.SoundReplacementLoader?.Log($"skipping a sound in '{LogFormats.FormatFilePath(collection.FilePath)}' because sound is marked as constant and has a value of false.");
-							skippedStats.Sounds++;
+						if(!uniquePaths.Add(soundReplacement.FullPath)) {
+							sharedSounds.Add(soundReplacement);
+							skippedStats.Shared++;
 							continue;
 						}
 
-						webRequestOperations.Add(StartWebRequestOperation(pack, soundReplacement, audioExtensions[Path.GetExtension(soundReplacement.Sound)]));
+						AudioType audioType = audioExtensions[Path.GetExtension(soundReplacement.Sound)];
+						UnityWebRequestAsyncOperation webRequest = UnityWebRequestMultimedia.GetAudioClip(soundReplacement.FullPath, audioType).SendWebRequest();
+						webRequestOperations.Add(new(soundReplacement, webRequest));
 					}
 				}
 			}
@@ -120,8 +129,10 @@ static class SoundPackLoadPipeline {
 		bool displayedHalfwayMessage = false;
 		bool threadsShouldExit = false;
 
-		ConcurrentQueue<LoadSoundOperation> queuedOperations = new ConcurrentQueue<LoadSoundOperation>();
+		ConcurrentQueue<LoadSoundOperation> queuedOperations = [];
 		ConcurrentBag<Exception> threadPoolExceptions = [];
+
+		ConcurrentDictionary<string, AudioClip> uniqueClips = [];
 
 		// TODO: fix me? this is probably still not good logic.
 		for(int i = 0; i < Environment.ProcessorCount; i++) {
@@ -140,9 +151,9 @@ static class SoundPackLoadPipeline {
 						downloadHandler.compressed = true;
 						AudioClip clip = downloadHandler.audioClip;
 						operation.Sound.Clip = clip;
-						_ = SoundAPIAudioManager.loadedClips.Add(clip);
 						operation.WebRequest.Dispose();
-						Debuggers.SoundReplacementLoader?.Log($"clip generated: {clip.name} on thread {threadIndex}");
+						if(uniqueClips.TryAdd(operation.Sound.FullPath, clip))
+							Debuggers.SoundReplacementLoader?.Log($"clip generated: {clip.name} on thread {threadIndex}");
 
 						operation.IsDone = true;
 					} catch(Exception exception) {
@@ -182,6 +193,13 @@ static class SoundPackLoadPipeline {
 			allDone = webRequestOperations.FindIndex(operation => !operation.IsDone) == -1;
 		}
 
+		// Step 7: Restore shared clips.
+		foreach(SoundInstance soundReplacement in sharedSounds) {
+			if(uniqueClips.TryGetValue(soundReplacement.FullPath, out AudioClip clip)) {
+				soundReplacement.Clip = clip;
+			}
+		}
+
 		loaforcsSoundAPI.Logger.LogInfo($"(Step 6) Took {timer.ElapsedMilliseconds}ms to finish loading audio clips from files");
 		if(threadPoolExceptions.Count != 0) {
 			loaforcsSoundAPI.Logger.LogError($"(Step 6) {threadPoolExceptions.Count} internal error(s) happened while loading:");
@@ -189,10 +207,11 @@ static class SoundPackLoadPipeline {
 				loaforcsSoundAPI.Logger.LogError(poolException.ToString());
 			}
 		}
+		loaforcsSoundAPI.Logger.LogInfo($"(Step 7) Restored {skippedStats.Shared} already-loaded clips!");
 
 		#endregion
 
-		// Step 7: Fire event and final cleanup
+		// Step 8: Fire event and final cleanup
 		OnFinishedPipeline();
 		mappings = null;
 
@@ -257,8 +276,8 @@ static class SoundPackLoadPipeline {
 			if(collection == null) continue; // json error
 			collection.Pack = pack;
 
-			if(collection.Condition is ConstantCondition constant && constant.Value == false) {
-				Debuggers.SoundReplacementLoader?.Log($"skipping '{LogFormats.FormatFilePath(collection.FilePath)}' because collection is marked as constant and has a value of false.");
+			if(collection.Condition is ConfigCondition collectionConfig && collectionConfig.PreventLoading) {
+				Debuggers.SoundReplacementLoader?.Log($"Skipping '{LogFormats.FormatFilePath(collection.FilePath)}' due to being disabled by config '{collectionConfig.Config}'!");
 				skippedStats.Collections++;
 				continue;
 			}
@@ -266,15 +285,10 @@ static class SoundPackLoadPipeline {
 			if(!IValidatable.LogAndCheckValidationResult($"loading '{LogFormats.FormatFilePath(file)}'", collection.Validate(), pack.Logger)) continue;
 
 			List<IValidatable.ValidationResult> groupValidations = [];
-			// not the cleanest
+			HashSet<SoundReplacementGroup> groupsToRemove = [];
+
 			foreach(SoundReplacementGroup replacementGroup in collection.Replacements) {
 				replacementGroup.Parent = collection; // !!! - Setting data while doing validation. If this ever breaks it's here!
-
-				if(replacementGroup.Condition is ConstantCondition constantGroup && constantGroup.Value == false) {
-					Debuggers.SoundReplacementLoader?.Log($"skipping a replacement in '{LogFormats.FormatFilePath(collection.FilePath)}' because group is marked as constant and has a value of false.");
-					skippedStats.Groups++;
-					continue;
-				}
 
 				// validate match strings
 				List<IValidatable.ValidationResult> validationResults = replacementGroup.Validate();
@@ -297,6 +311,13 @@ static class SoundPackLoadPipeline {
 					continue;
 				}
 
+				if(replacementGroup.Condition is ConfigCondition groupConfig && groupConfig.PreventLoading) {
+					Debuggers.SoundReplacementLoader?.Log($"Skipping a group in '{LogFormats.FormatFilePath(collection.FilePath)}' due to being disabled by config '{groupConfig.Config}'!");
+					_ = groupsToRemove.Add(replacementGroup);
+					skippedStats.Groups++;
+					continue;
+				}
+
 				// validate sounds exist.
 				foreach(SoundInstance sound in replacementGroup.Sounds) {
 					sound.Parent = replacementGroup; // !!! - Setting data while doing validation. If this ever breaks it's here!
@@ -305,9 +326,9 @@ static class SoundPackLoadPipeline {
 
 				if(validationResults.Count != 0) {
 					groupValidations.AddRange(validationResults);
+					_ = groupsToRemove.Add(replacementGroup);
 					continue;
 				}
-
 
 				// Imply "*:object:clip" from "object:clip"
 				string[] corrected = new string[replacementGroup.Matches.Count];
@@ -320,19 +341,14 @@ static class SoundPackLoadPipeline {
 				replacementGroup.Matches.AddRange(corrected);
 			}
 
+			// Remove disabled or invalid replacement groups.
+			_ = collection.Replacements.RemoveAll(groupsToRemove.Contains);
+
 			if(!IValidatable.LogAndCheckValidationResult($"loading '{LogFormats.FormatFilePath(file)}'", groupValidations, pack.Logger)) continue;
 
 			collections.Add(collection);
 		}
 
 		return collections;
-	}
-
-	static LoadSoundOperation StartWebRequestOperation(SoundPack pack, SoundInstance sound, AudioType type) {
-		string fullPath = Path.Combine(pack.PackFolder, "sounds", sound.Sound);
-
-		UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(fullPath, type);
-
-		return new LoadSoundOperation(sound, www.SendWebRequest());
 	}
 }

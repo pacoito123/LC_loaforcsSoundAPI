@@ -1,11 +1,8 @@
-﻿using System.Runtime.CompilerServices;
-using loaforcsSoundAPI.SoundPacks.Data;
-using UnityEngine;
-using UnityEngine.Networking;
+﻿using UnityEngine.Networking;
 
-namespace loaforcsSoundAPI.SoundPacks;
+namespace loaforcsSoundAPI.SoundPacks.Data;
 
-class LoadSoundOperation(
+internal sealed class LoadSoundOperation(
 	SoundInstance soundInstance,
 	UnityWebRequestAsyncOperation webRequest
 ) {

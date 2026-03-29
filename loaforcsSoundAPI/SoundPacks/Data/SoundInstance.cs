@@ -26,6 +26,8 @@ public class SoundInstance : Conditional {
 
 	public int Weight { get; private set; }
 
+	internal string FullPath => Path.Combine(Pack.PackFolder, "sounds", Sound);
+
 	[field: NonSerialized]
 	public AudioClip Clip {
 		get;
@@ -39,7 +41,7 @@ public class SoundInstance : Conditional {
 	public override List<IValidatable.ValidationResult> Validate() {
 		List<IValidatable.ValidationResult> results = base.Validate();
 
-		if(!File.Exists(Path.Combine(Pack.PackFolder, "sounds", Sound))) {
+		if(!File.Exists(FullPath)) {
 			results.Add(new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Sound '{Sound}' couldn't be found or doesn't exist!"));
 		} else if(!SoundPackLoadPipeline.audioExtensions.ContainsKey(Path.GetExtension(Sound))) {
 			results.Add(new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Audio type: '{Path.GetExtension(Sound)}' is not supported!"));

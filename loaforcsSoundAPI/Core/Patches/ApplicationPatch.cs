@@ -1,4 +1,4 @@
-using HarmonyLib;
+/* using HarmonyLib;
 using UnityEngine;
 
 namespace loaforcsSoundAPI.Core.Patches;
@@ -11,4 +11,4 @@ static class ApplicationPatch {
             Object.Destroy(clip);
         }
     }
-}
+} */

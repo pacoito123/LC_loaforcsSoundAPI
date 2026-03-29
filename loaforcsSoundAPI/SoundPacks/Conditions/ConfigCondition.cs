@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
+using JetBrains.Annotations;
 using loaforcsSoundAPI.Core.Data;
-using loaforcsSoundAPI.SoundPacks.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
-using UnityEngine.UIElements;
 
 namespace loaforcsSoundAPI.SoundPacks.Conditions;
 
@@ -14,13 +13,14 @@ namespace loaforcsSoundAPI.SoundPacks.Conditions;
 ///		<id>config</id>
 /// </soundapi>
 [SoundAPICondition("config")]
-class ConfigCondition : Condition {
+public sealed class ConfigCondition : Condition {
 	/// <summary>
 	/// Config name
 	/// </summary>
 	/// <value><see cref="string"/></value>
 	/// <example>Replacements:replace_spider_sounds</example>
-	public string Config { get; private set; }
+	[CanBeNull]
+	public string Config { get; private set; } = null!;
 
 	/// <summary>
 	/// Value to check against.
@@ -28,23 +28,16 @@ class ConfigCondition : Condition {
 	/// <value>matches config</value>
 	/// <example>true</example>
 	/// <default>defaults to `true` if bool, defaults to empty if string</default>
-	public object Value { get; private set; }
+	[CanBeNull]
+	public object Value { get; private set; } = null!;
 
-	public override bool Evaluate(IContext context) {
-		if(!Pack.TryGetConfigValue(Config, out object data)) return false;
+    public bool PreventLoading => _preventLoading ?? (Validate().Count > 0);
+    private bool? _preventLoading;
 
-		// this is bad
-		if(Value == null) {
-			if(data is bool booleanData) return booleanData;
-			if(data is string stringData) return string.IsNullOrEmpty(stringData);
-			return false;
-		} else {
-			if(data is bool booleanData) return booleanData == (bool)Value;
-			if(data is string stringData) return stringData == (string)Value;
-			return false;
-		}
-	}
+	/// <inheritdoc/>
+	public override bool Evaluate(IContext context) => _preventLoading == false;
 
+	/// <inheritdoc/>
 	public override List<IValidatable.ValidationResult> Validate() {
 		if(!Pack.TryGetConfigValue(Config, out object data))
 			return [
@@ -55,6 +48,12 @@ class ConfigCondition : Condition {
 			return [
 				new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Config '{Config}' has a type of: '{data.GetType()}' but the Value type is '{Value.GetType()}'!")
 			];
+
+		_preventLoading = data switch {
+			bool booleanData => booleanData != (Value == null || (bool)Value),
+			string stringData => stringData != ((Value != null) ? (string)Value : string.Empty),
+			_ => false,
+		};
 
 		return [];
 	}
