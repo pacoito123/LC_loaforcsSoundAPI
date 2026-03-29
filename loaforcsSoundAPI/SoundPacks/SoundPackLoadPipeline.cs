@@ -14,6 +14,7 @@ using loaforcsSoundAPI.Core.Util;
 using loaforcsSoundAPI.Reporting;
 using loaforcsSoundAPI.SoundPacks.Conditions;
 using loaforcsSoundAPI.SoundPacks.Data;
+using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -86,7 +87,7 @@ static class SoundPackLoadPipeline {
 
 					if(collection.UpdateEveryFrame) replacementGroup.UpdateEveryFrame = true;
 
-					int skippedSounds = replacementGroup.Sounds.RemoveAll(soundReplacement => soundReplacement.Condition is ConfigCondition soundConfig && soundConfig.PreventLoading);
+					int skippedSounds = replacementGroup.Sounds.RemoveAll(soundReplacement => !ConfigCondition.EvaluateConstantRecursive(soundReplacement.Condition, out string _));
 					if(skippedSounds > 0) {
 						Debuggers.SoundReplacementLoader?.Log($"Skipping {skippedSounds} sound(s) in '{LogFormats.FormatFilePath(collection.FilePath)}' due to being disabled by config!");
 						skippedStats.Sounds += skippedSounds;
@@ -276,8 +277,8 @@ static class SoundPackLoadPipeline {
 			if(collection == null) continue; // json error
 			collection.Pack = pack;
 
-			if(collection.Condition is ConfigCondition collectionConfig && collectionConfig.PreventLoading) {
-				Debuggers.SoundReplacementLoader?.Log($"Skipping '{LogFormats.FormatFilePath(collection.FilePath)}' due to being disabled by config '{collectionConfig.Config}'!");
+			if(!ConfigCondition.EvaluateConstantRecursive(collection.Condition, out string collectionConfigName)) {
+				Debuggers.SoundReplacementLoader?.Log($"Skipping '{LogFormats.FormatFilePath(collection.FilePath)}' due to being disabled by config '{collectionConfigName}'!");
 				skippedStats.Collections++;
 				continue;
 			}
@@ -311,8 +312,8 @@ static class SoundPackLoadPipeline {
 					continue;
 				}
 
-				if(replacementGroup.Condition is ConfigCondition groupConfig && groupConfig.PreventLoading) {
-					Debuggers.SoundReplacementLoader?.Log($"Skipping a group in '{LogFormats.FormatFilePath(collection.FilePath)}' due to being disabled by config '{groupConfig.Config}'!");
+				if(!ConfigCondition.EvaluateConstantRecursive(replacementGroup.Condition, out string replacementConfigName)) {
+					Debuggers.SoundReplacementLoader?.Log($"Skipping a group in '{LogFormats.FormatFilePath(collection.FilePath)}' due to being disabled by config '{replacementConfigName}'!");
 					_ = groupsToRemove.Add(replacementGroup);
 					skippedStats.Groups++;
 					continue;

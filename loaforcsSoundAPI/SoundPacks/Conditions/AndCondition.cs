@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using loaforcsSoundAPI.Core;
-using loaforcsSoundAPI.Core.Data;
-using loaforcsSoundAPI.Core.Util;
+﻿using System;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 
 namespace loaforcsSoundAPI.SoundPacks.Conditions;
@@ -14,17 +11,11 @@ namespace loaforcsSoundAPI.SoundPacks.Conditions;
 ///		<id>and</id>
 /// </soundapi>
 [SoundAPICondition("and")]
-class AndCondition : LogicGateCondition {
-	/// <summary>
-	/// Collection of conditions
-	/// </summary>
-	/// <value><see cref="Condition"/></value>
-	public override Condition[] Conditions { get; protected set; }
-
+public class AndCondition : LogicGateCondition {
 	protected override string ValidateWarnMessage => "'and' condition has no conditions and will always return true!";
 
 	public override bool Evaluate(IContext context) {
-		return And(Conditions, context);
+		return Array.FindIndex(Conditions, condition => condition is InvalidCondition || !condition.Evaluate(context)) == -1;
 	}
 }
 
@@ -36,16 +27,10 @@ class AndCondition : LogicGateCondition {
 ///		<id>nand</id>
 /// </soundapi>
 [SoundAPICondition("nand")]
-class NandCondition : LogicGateCondition {
-	/// <summary>
-	/// Collection of conditions
-	/// </summary>
-	/// <value><see cref="Condition"/></value>
-	public override Condition[] Conditions { get; protected set; }
-
+public sealed class NandCondition : AndCondition {
 	protected override string ValidateWarnMessage => "'nand' condition has no conditions and will always return false!";
 
 	public override bool Evaluate(IContext context) {
-		return !And(Conditions, context);
+		return !base.Evaluate(context);
 	}
 }

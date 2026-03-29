@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using loaforcsSoundAPI.Core.Data;
-using loaforcsSoundAPI.Core.Util;
+﻿using System;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 
 namespace loaforcsSoundAPI.SoundPacks.Conditions;
@@ -13,17 +11,11 @@ namespace loaforcsSoundAPI.SoundPacks.Conditions;
 ///		<id>or</id>
 /// </soundapi>
 [SoundAPICondition("or")]
-class OrCondition : LogicGateCondition {
-	/// <summary>
-	/// Collection of conditions
-	/// </summary>
-	/// <value><see cref="Condition"/></value>
-	public override Condition[] Conditions { get; protected set; }
-
+public class OrCondition : LogicGateCondition {
 	protected override string ValidateWarnMessage => "'or' condition has no conditions and will always return false!";
 
 	public override bool Evaluate(IContext context) {
-		return Or(Conditions, context);
+		return Array.FindIndex(Conditions, condition => condition is not InvalidCondition && condition.Evaluate(context)) != -1;
 	}
 }
 
@@ -35,16 +27,10 @@ class OrCondition : LogicGateCondition {
 ///		<id>nor</id>
 /// </soundapi>
 [SoundAPICondition("nor")]
-class NorCondition : LogicGateCondition {
-	/// <summary>
-	/// Collection of conditions
-	/// </summary>
-	/// <value><see cref="Condition"/></value>
-	public override Condition[] Conditions { get; protected set; }
-
+public sealed class NorCondition : OrCondition {
 	protected override string ValidateWarnMessage => "'nor' condition has no conditions and will always return true!";
 
 	public override bool Evaluate(IContext context) {
-		return !Or(Conditions, context);
+		return !base.Evaluate(context);
 	}
 }

@@ -31,14 +31,21 @@ public sealed class ConfigCondition : Condition {
 	[CanBeNull]
 	public object Value { get; private set; } = null!;
 
-    public bool PreventLoading => _preventLoading ?? (Validate().Count > 0);
-    private bool? _preventLoading;
+	/// <summary>
+	/// Compute and/or obtain the constant value for this <c>ConfigCondition</c>.
+	/// </summary>
+	/// <value>Computed constant value.</value>
+	/// <default>defaults to `false` if validation fails, otherwise `true`.</default>
+	public bool Constant => _constant.GetValueOrDefault(Validate().Count == 0);
+	private bool? _constant;
 
 	/// <inheritdoc/>
-	public override bool Evaluate(IContext context) => _preventLoading == false;
+	public override bool Evaluate(IContext context) => _constant == true;
 
 	/// <inheritdoc/>
 	public override List<IValidatable.ValidationResult> Validate() {
+		_constant = false; // Default to false if validation fails.
+
 		if(!Pack.TryGetConfigValue(Config, out object data))
 			return [
 				new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Config '{Config}' does not exist on SoundPack '{Pack.Name}'")
@@ -49,12 +56,28 @@ public sealed class ConfigCondition : Condition {
 				new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Config '{Config}' has a type of: '{data.GetType()}' but the Value type is '{Value.GetType()}'!")
 			];
 
-		_preventLoading = data switch {
-			bool booleanData => booleanData != (Value == null || (bool)Value),
-			string stringData => stringData != ((Value != null) ? (string)Value : string.Empty),
+		_constant = data switch {
+			bool booleanData => booleanData == (Value == null || (bool)Value),
+			string stringData => stringData == ((Value != null) ? (string)Value : string.Empty),
 			_ => false,
 		};
 
 		return [];
+	}
+
+	internal static bool EvaluateConstantRecursive(Condition condition, out string configName) {
+		configName = string.Empty;
+		if(condition is ConfigCondition config) {
+			configName = config.Config;
+			bool greed = config.Constant;
+			loaforcsSoundAPI.Logger.LogInfo($"CHECKIN: {configName}, CONSTANT: {greed}");
+			return greed;
+		}
+		if(condition is LogicGateCondition logicGate) {
+			for(int i = 0; i < logicGate.Conditions?.Length; i++) {
+				if(!EvaluateConstantRecursive(logicGate.Conditions[i], out configName)) return false;
+			}
+		}
+		return true;
 	}
 }
