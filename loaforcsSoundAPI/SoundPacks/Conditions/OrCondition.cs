@@ -27,10 +27,10 @@ public class OrCondition : LogicGateCondition {
 ///		<id>nor</id>
 /// </soundapi>
 [SoundAPICondition("nor")]
-public sealed class NorCondition : OrCondition {
+public sealed class NorCondition : LogicGateCondition {
 	protected override string ValidateWarnMessage => "'nor' condition has no conditions and will always return true!";
 
 	public override bool Evaluate(IContext context) {
-		return !base.Evaluate(context);
+		return Array.FindIndex(Conditions, condition => condition is not InvalidCondition && condition.Evaluate(context)) == -1;
 	}
 }

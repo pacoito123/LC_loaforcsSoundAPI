@@ -27,10 +27,10 @@ public class AndCondition : LogicGateCondition {
 ///		<id>nand</id>
 /// </soundapi>
 [SoundAPICondition("nand")]
-public sealed class NandCondition : AndCondition {
+public sealed class NandCondition : LogicGateCondition {
 	protected override string ValidateWarnMessage => "'nand' condition has no conditions and will always return false!";
 
 	public override bool Evaluate(IContext context) {
-		return !base.Evaluate(context);
+		return Array.FindIndex(Conditions, condition => condition is InvalidCondition || !condition.Evaluate(context)) != -1;
 	}
 }

@@ -69,9 +69,7 @@ public sealed class ConfigCondition : Condition {
 		configName = string.Empty;
 		if(condition is ConfigCondition config) {
 			configName = config.Config;
-			bool greed = config.Constant;
-			loaforcsSoundAPI.Logger.LogInfo($"CHECKIN: {configName}, CONSTANT: {greed}");
-			return greed;
+			return config.Constant;
 		}
 		if(condition is LogicGateCondition logicGate) {
 			for(int i = 0; i < logicGate.Conditions?.Length; i++) {

@@ -27,10 +27,10 @@ public class XorCondition : LogicGateCondition {
 ///		<id>xnor</id>
 /// </soundapi>
 [SoundAPICondition("xnor")]
-public sealed class XnorCondition : XorCondition {
+public sealed class XnorCondition : LogicGateCondition {
     protected override string ValidateWarnMessage => "'xnor' condition has no conditions and will always return true!";
 
     public override bool Evaluate(IContext context) {
-        return !base.Evaluate(context);
+        return Array.FindAll(Conditions, condition => condition is not InvalidCondition && condition.Evaluate(context)).Length != 1;
     }
 }
