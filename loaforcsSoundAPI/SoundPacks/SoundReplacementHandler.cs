@@ -1,21 +1,15 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
-using BepInEx.Configuration;
 using loaforcsSoundAPI.Core;
 using loaforcsSoundAPI.Core.Util.Extensions;
 using loaforcsSoundAPI.Reporting;
 using loaforcsSoundAPI.Reporting.Data;
-using loaforcsSoundAPI.SoundPacks.Conditions;
 using loaforcsSoundAPI.SoundPacks.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
@@ -144,7 +138,7 @@ static class SoundReplacementHandler {
 			SoundReport.PlayedSound playedSound = new SoundReport.PlayedSound($"{name[TOKEN_PARENT_NAME]}:{name[TOKEN_OBJECT_NAME]}:{name[TOKEN_CLIP_NAME]}",
 				className, source.playOnAwake, source.loop, isOneShot);
 
-			if(!SoundReportHandler.CurrentReport.PlayedSounds.Any(playedSound.Equals))
+			if(SoundReportHandler.CurrentReport.PlayedSounds.FindIndex(playedSound.Equals) == -1)
 				// only add new unique ones
 				SoundReportHandler.CurrentReport.PlayedSounds.Add(playedSound);
 		}
@@ -164,16 +158,12 @@ static class SoundReplacementHandler {
 
 		Debuggers.SoundReplacementHandler?.Log("sound dictionary hit");
 
-		possibleCollections = possibleCollections
-			.Where(it => it.Parent.Evaluate(context) && it.Evaluate(context) && CheckGroupMatches(it, name))
-			.ToList();
-
-		if(possibleCollections.Count == 0) return false;
+		group = possibleCollections.Find(it => it.Parent.Evaluate(context) && it.Evaluate(context) && CheckGroupMatches(it, name));
+		if(group == null) return false;
 
 		Debuggers.SoundReplacementHandler?.Log("sound group that matches");
 
-		group = possibleCollections[Random.Range(0, possibleCollections.Count)];
-		List<SoundInstance> replacements = group.Sounds.Where(it => it.Evaluate(context)).ToList();
+		List<SoundInstance> replacements = group.Sounds.FindAll(it => it.Evaluate(context));
 		if(replacements.Count == 0) return false;
 
 		Debuggers.SoundReplacementHandler?.Log("has valid sounds");
