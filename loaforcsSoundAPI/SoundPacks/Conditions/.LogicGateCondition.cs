@@ -25,6 +25,12 @@ public abstract class LogicGateCondition : Condition {
 				new IValidatable.ValidationResult(IValidatable.ResultType.WARN, ValidateWarnMessage)
 			];
 
-		return [];
+		List<IValidatable.ValidationResult> results = [];
+		for(int i = 0; i < Conditions.Length; i++) {
+			if(Conditions[i] != null) {
+				results.AddRange(Conditions[i].Validate());
+			}
+		}
+		return (results.Count > 0) ? results : [];
 	}
 }

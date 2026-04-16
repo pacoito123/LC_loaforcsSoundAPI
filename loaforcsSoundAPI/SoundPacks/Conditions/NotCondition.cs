@@ -40,6 +40,6 @@ class NotCondition : Condition {
 				new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, "'not' condition has no valid condition to invert!")
 			];
 
-		return [];
+		return Condition.Validate();
 	}
 }
