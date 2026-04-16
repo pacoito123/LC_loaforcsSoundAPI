@@ -34,13 +34,20 @@ static class SoundPackDataHandler {
 		foreach(string match in group.Matches) {
 			string[] splitMatch = match.Split(":", StringSplitOptions.RemoveEmptyEntries);
 			if(splitMatch.Length == 0) continue;
-			string clipName = splitMatch[splitMatch.Length - 1];
+			string clipName = splitMatch[^1];
 			if(!SoundReplacements.TryGetValue(clipName, out List<SoundReplacementGroup> existingGroups)) {
 				existingGroups = [];
 			}
 			if(existingGroups.Contains(group)) continue;
-			existingGroups.Add(group);
-			SoundReplacements[clipName] = existingGroups;
+			if(existingGroups.Count == 0 || existingGroups[0].Priority >= group.Priority) {
+				existingGroups.Insert(0, group);
+			} else if(existingGroups[^1].Priority <= group.Priority) {
+				existingGroups.Add(group);
+			} else {
+				int index = existingGroups.FindIndex(existingGroup => existingGroup.Priority >= group.Priority);
+				existingGroups.Insert(index, group);
+			}
+			SoundReplacements[clipName] = existingGroups; // Why is this needed...?
 		}
 	}
 

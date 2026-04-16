@@ -29,6 +29,7 @@ public class SoundReplacementGroup : Conditional {
 
 	[field: NonSerialized]
 	public SoundReplacementCollection Parent { get; internal set; }
+	public int Priority { get; internal set; }
 
 	public List<string> Matches { get; private set; }
 	public List<SoundInstance> Sounds { get; private set; } = [];
