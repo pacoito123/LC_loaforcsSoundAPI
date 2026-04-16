@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using loaforcsSoundAPI.SoundPacks;
@@ -6,37 +7,25 @@ using UnityEngine;
 
 namespace loaforcsSoundAPI.Core.Patches;
 
-//[HarmonyPatch(typeof(UnityEngine.Object))]
-static class UnityObjectPatch {
-	static void InstantiatePatch(UnityEngine.Object __result) {
-		// Debuggers.AudioSourceAdditionalData?.Log($"aghuobr: {__result.name}");
-		if(__result is not GameObject gameObject) return;
-		CheckInstantiationRecursively(gameObject);
+internal static class UnityObjectPatch {
+	private static readonly List<AudioSource> sourcesInLastObject = [];
+
+	private static void InstantiatePatch(UnityEngine.Object __result) {
+		if(__result is not Component component) return;
+		component.gameObject.GetComponentsInChildren(includeInactive: true, sourcesInLastObject);
+		for(int i = 0; i < sourcesInLastObject.Count; i++)
+			SoundReplacementHandler.CheckAudioSource(sourcesInLastObject[i]);
 	}
 
 	internal static void Init(Harmony harmony) {
-		HarmonyMethod postfixPatch = new HarmonyMethod(typeof(UnityObjectPatch).GetMethod(nameof(InstantiatePatch), BindingFlags.Static | BindingFlags.NonPublic));
-		foreach(MethodInfo method in typeof(UnityEngine.Object).GetMethods()) {
-			if(method.Name != nameof(UnityEngine.Object.Instantiate)) continue;
-			Debuggers.AudioSourceAdditionalData?.Log($"patching {method}");
+		HarmonyMethod postfixPatch = new(typeof(UnityObjectPatch).GetMethod(nameof(InstantiatePatch), BindingFlags.Static | BindingFlags.NonPublic));
+		foreach(MethodInfo method in typeof(UnityEngine.Object).GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)) {
+			if((method.MethodImplementationFlags & MethodImplAttributes.InternalCall) == 0 || method.ReturnType != typeof(UnityEngine.Object)) continue;
 
-			if(method.IsGenericMethod)
-				harmony.Patch(method.MakeGenericMethod(typeof(UnityEngine.Object)), postfix: postfixPatch);
-			else
-				harmony.Patch(method, postfix: postfixPatch);
-		}
-	}
-
-	static void CheckInstantiationRecursively(GameObject gameObject) {
-		//Debuggers.AudioSourceAdditionalData?.Log($"recursively: {gameObject.name}");
-		if(gameObject.TryGetComponent(out AudioSourceAdditionalData _)) return; // already processed
-
-		foreach(AudioSource source in gameObject.GetComponents<AudioSource>()) {
-			SoundReplacementHandler.CheckAudioSource(source);
-		}
-
-		foreach(Transform transform in gameObject.transform) {
-			CheckInstantiationRecursively(transform.gameObject);
+			if(method.Name.Contains("Instantiate", StringComparison.Ordinal) || method.Name.Contains("Clone", StringComparison.Ordinal)) {
+				Debuggers.AudioSourceAdditionalData?.Log($"patching {method}");
+				_ = harmony.Patch(method, postfix: postfixPatch);
+			}
 		}
 	}
 }
