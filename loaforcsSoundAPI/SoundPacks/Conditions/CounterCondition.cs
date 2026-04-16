@@ -1,5 +1,8 @@
-﻿using loaforcsSoundAPI.Core;
+﻿using System.Collections.Generic;
+using loaforcsSoundAPI.Core;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace loaforcsSoundAPI.SoundPacks.Conditions;
 
@@ -15,6 +18,8 @@ namespace loaforcsSoundAPI.SoundPacks.Conditions;
 /// </soundapi>
 [SoundAPICondition("counter")]
 public class CounterCondition : RangeCondition<int> {
+	private static readonly Dictionary<AudioSource, int> localCounters = [];
+
 	protected override RangeOperator<int> DefaultRange => new(int.MinValue, int.MaxValue);
 
 	/// <summary>
@@ -24,18 +29,46 @@ public class CounterCondition : RangeCondition<int> {
 	/// <example>5</example>
 	public int? ResetsAt { get; private set; }
 
+	public bool? IsLocal { get; internal set; }
+
 	private int _count;
 
+	/// <inheritdoc/>
+	protected internal override void OnRegistered() {
+		SceneManager.sceneUnloaded += ClearDestroyed;
+	}
+
+	private void ClearDestroyed(Scene scene) {
+		int destroyedSources = 0;
+		foreach(AudioSource key in localCounters.Keys) {
+			if(key == null && localCounters.Remove(key!)) {
+				destroyedSources++;
+			}
+		}
+		if(destroyedSources > 0) {
+			LogDebug("counter", $"Removed {destroyedSources} destroyed AudioSources.");
+		}
+	}
+
 	public override bool Evaluate(IContext context) {
-		LogDebug("counter", $"counting: {_count} -> {_count + 1}");
-		_count++;
-		bool result = EvaluateRangeOperator(_count);
-		LogDebug("counter", $"is {_count} in range ({Value})? {result}");
-		if(ResetsAt.HasValue && _count >= ResetsAt.Value) {
-			_count = 0;
+		if(IsLocal.GetValueOrDefault() && context.Source != null) {
+			_ = localCounters.TryGetValue(context.Source, out int count);
+			bool result = IncreaseCounter(ref count);
+			localCounters[context.Source] = count;
+			return result;
+		}
+		return IncreaseCounter(ref _count);
+	}
+
+	private bool IncreaseCounter(ref int count) {
+		LogDebug("counter", $"counting: {count} -> {count + 1}, local: {IsLocal.GetValueOrDefault()}");
+		count++;
+		bool result = EvaluateRangeOperator(count);
+		LogDebug("counter", $"is {count} in range ({Value})? {result}");
+		if(ResetsAt.HasValue && count >= ResetsAt.Value) {
+			count = 0;
 			LogDebug("counter", $"reset count to 0.");
 		}
-
 		return result;
 	}
 
