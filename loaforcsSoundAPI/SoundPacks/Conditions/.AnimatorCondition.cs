@@ -43,7 +43,7 @@ public abstract class AnimatorCondition : Condition {
 
     /// <inheritdoc/>
     public override bool Evaluate(IContext context) {
-        return TryGetAnimator(out Animator animator) && _parameterType switch {
+        return TryGetAnimator(out Animator animator, context) && _parameterType switch {
             AnimatorParamType.Bool or AnimatorParamType.Trigger => animator.GetBool(_parameterID) == _value,
             AnimatorParamType.Float => FloatRange.EvaluateRangeOperator(animator.GetFloat(_parameterID)),
             AnimatorParamType.Integer => IntRange.EvaluateRangeOperator(animator.GetInteger(_parameterID)),
@@ -100,13 +100,12 @@ public abstract class AnimatorCondition : Condition {
     ///     Attempt to obtain the specific <c>Animator</c> instance this <c>Condition</c> should use to evaluate.
     /// </summary>
     /// <param name="animator"></param>
+    /// <param name="context"></param>
     /// <returns>Whether an <c>Animator</c> was successfully obtained or not.</returns>
-    protected abstract bool TryGetAnimator(out Animator animator);
+    protected abstract bool TryGetAnimator(out Animator animator, IContext context);
 }
 
 public abstract class AnimatorCondition<TContext> : AnimatorCondition, IContextCondition<TContext> where TContext : struct, IContext {
-    protected TContext? _currentContext;
-
     /// <inheritdoc/>
     public override bool Evaluate(IContext context) {
         if(context is not TContext type) return EvaluateFallback(context); // mismatching context, use fallback
@@ -116,20 +115,18 @@ public abstract class AnimatorCondition<TContext> : AnimatorCondition, IContextC
 
     /// <inheritdoc/>
     public virtual bool EvaluateWithContext(TContext context) {
-        _currentContext ??= context;
-
         return base.Evaluate(context);
     }
 
     /// <inheritdoc/>
-    public bool EvaluateFallback(IContext context) {
+    public virtual bool EvaluateFallback(IContext context) {
         return false;
     }
 
     /// <inheritdoc/>
-    protected override bool TryGetAnimator(out Animator animator) {
+    protected override bool TryGetAnimator(out Animator animator, IContext context) {
         animator = null!;
-        return _currentContext.HasValue && TryGetAnimator(out animator, _currentContext.Value);
+        return (context is TContext contextWithType) && TryGetAnimator(out animator, contextWithType);
     }
 
     /// <summary>

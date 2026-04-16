@@ -26,7 +26,7 @@ public abstract class MultipleCondition<T> : Condition {
 
     /// <inheritdoc/>
     public override bool Evaluate(IContext context) {
-        return Values?.Length > 0 && Array.FindIndex(Values, CheckValue) != -1;
+        return Values?.Length > 0 && Array.FindIndex(Values, value => CheckValue(value, context)) != -1;
     }
 
     /// <inheritdoc/>
@@ -98,13 +98,12 @@ public abstract class MultipleCondition<T> : Condition {
     ///     Check if the given value of type <typeparamref name="T"/> is inside the list of accepted values for this <c>Condition</c>.
     /// </summary>
     /// <param name="value">Value of type <typeparamref name="T"/> to check.</param>
+    /// <param name="context"></param>
     /// <returns>Whether the given value is present in the list of accepted values or not.</returns>
-    protected abstract bool CheckValue(T value);
+    protected abstract bool CheckValue(T value, IContext context);
 }
 
 public abstract class MultipleCondition<T, TContext> : MultipleCondition<T>, IContextCondition<TContext> where TContext : struct, IContext {
-    protected TContext? _currentContext;
-
     /// <inheritdoc/>
     public override bool Evaluate(IContext context) {
         if(context is not TContext type) return EvaluateFallback(context); // mismatching context, use fallback
@@ -113,9 +112,7 @@ public abstract class MultipleCondition<T, TContext> : MultipleCondition<T>, ICo
     }
 
     /// <inheritdoc/>
-    public bool EvaluateWithContext(TContext context) {
-        _currentContext ??= context;
-
+    public virtual bool EvaluateWithContext(TContext context) {
         return base.Evaluate(context);
     }
 
@@ -125,8 +122,8 @@ public abstract class MultipleCondition<T, TContext> : MultipleCondition<T>, ICo
     }
 
     /// <inheritdoc/>
-    protected override bool CheckValue(T value) {
-        return _currentContext.HasValue && CheckValueWithContext(value, _currentContext.Value);
+    protected override bool CheckValue(T value, IContext context) {
+        return (context is TContext contextWithType) && CheckValueWithContext(value, contextWithType);
     }
 
     /// <summary>

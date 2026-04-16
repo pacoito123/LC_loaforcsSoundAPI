@@ -18,7 +18,8 @@ namespace loaforcsSoundAPI.SoundPacks.Conditions;
 /// </soundapi>
 [SoundAPICondition("counter")]
 public class CounterCondition : RangeCondition<int> {
-	private static readonly Dictionary<AudioSource, int> localCounters = [];
+	private static readonly List<AudioSource> _keys = [];
+	private static readonly Dictionary<AudioSource, int> _localCounters = [];
 
 	protected override RangeOperator<int> DefaultRange => new(int.MinValue, int.MaxValue);
 
@@ -35,26 +36,29 @@ public class CounterCondition : RangeCondition<int> {
 
 	/// <inheritdoc/>
 	protected internal override void OnRegistered() {
+		SceneManager.sceneUnloaded -= ClearDestroyed;
 		SceneManager.sceneUnloaded += ClearDestroyed;
 	}
 
-	private void ClearDestroyed(Scene scene) {
+	private static void ClearDestroyed(Scene scene) {
 		int destroyedSources = 0;
-		foreach(AudioSource key in localCounters.Keys) {
-			if(key == null && localCounters.Remove(key!)) {
+		_keys.AddRange(_localCounters.Keys);
+		foreach(AudioSource key in _keys) {
+			if(key == null && _localCounters.Remove(key!)) {
 				destroyedSources++;
 			}
 		}
 		if(destroyedSources > 0) {
 			LogDebug("counter", $"Removed {destroyedSources} destroyed AudioSources.");
 		}
+		_keys.Clear();
 	}
 
 	public override bool Evaluate(IContext context) {
 		if(IsLocal.GetValueOrDefault() && context.Source != null) {
-			_ = localCounters.TryGetValue(context.Source, out int count);
+			_ = _localCounters.TryGetValue(context.Source, out int count);
 			bool result = IncreaseCounter(ref count);
-			localCounters[context.Source] = count;
+			_localCounters[context.Source] = count;
 			return result;
 		}
 		return IncreaseCounter(ref _count);
