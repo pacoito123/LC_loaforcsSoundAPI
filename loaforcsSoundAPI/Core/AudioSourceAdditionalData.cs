@@ -121,7 +121,12 @@ public class AudioSourceAdditionalData {
 
 
 		float currentTime = Source.time;
+		if(currentTime >= sound.Clip.length) {
+			Source.Stop(); // TODO: Condition to remember playback time.
+			return;
+		}
 		Source.clip = sound.Clip;
+
 		Source.Play();
 		Source.time = currentTime;
 
@@ -129,7 +134,7 @@ public class AudioSourceAdditionalData {
 	}
 
 	bool RequiresUpdateFunction() {
-		return ReplacedWith != null && ReplacedWith.Parent.UpdateEveryFrame;
+		return ReplacedWith != null && ReplacedWith.UpdateEveryFrame;
 	}
 
 	bool AudioSourceIsPlaying() {

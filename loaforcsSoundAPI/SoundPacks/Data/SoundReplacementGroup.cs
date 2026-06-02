@@ -34,6 +34,8 @@ public class SoundReplacementGroup : Conditional, IValidatable {
 	public List<string> Matches { get; private set; }
 	public List<SoundInstance> Sounds { get; private set; } = [ ];
 
+	public bool UpdateEveryFrame { get; internal set; }
+
 	public override void OnRegistered() {
 		base.OnRegistered();
 		foreach(SoundInstance sound in Sounds) {

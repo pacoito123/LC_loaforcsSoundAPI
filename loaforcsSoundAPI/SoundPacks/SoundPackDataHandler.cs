@@ -55,4 +55,8 @@ static class SoundPackDataHandler {
 			SoundReplacements[clipName].Remove(group);
 		}
 	}
+
+	internal static List<SoundReplacementGroup> GetReplacements(string match) {
+		return SoundReplacements.TryGetValue(match, out List<SoundReplacementGroup> groups) ? groups : [];
+	}
 }

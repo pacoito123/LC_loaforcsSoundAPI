@@ -97,6 +97,8 @@ static class SoundPackLoadPipeline {
 						continue;
 					}
 
+					if(collection.UpdateEveryFrame) replacementGroup.UpdateEveryFrame = true;
+
 					SoundPackDataHandler.AddReplacement(replacementGroup);
 					replacementGroup.QueueSounds(audioClipLoader, skippedStats);
 				}

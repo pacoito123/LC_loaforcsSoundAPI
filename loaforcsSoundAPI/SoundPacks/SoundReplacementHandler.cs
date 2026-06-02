@@ -26,7 +26,7 @@ readonly struct ReplacementResult {
 	public ReplacementResult(AudioClip replacement, SoundReplacementGroup group) {
 		ReplacedClip = replacement;
 		ReplacedWith = group;
-		IsUpdateEveryFrame = group.Parent.UpdateEveryFrame;
+		IsUpdateEveryFrame = group.UpdateEveryFrame;
 	}
 
 	public AudioClip ReplacedClip { get; }
@@ -54,7 +54,7 @@ static class SoundReplacementHandler {
 			return false;
 		}
 
-		if(@event.Data.ReplacedWith != null && @event.Data.ReplacedWith.Parent.UpdateEveryFrame) {
+		if(@event.Data.ReplacedWith != null && @event.Data.ReplacedWith.UpdateEveryFrame) {
 			return false;
 		}
 
