@@ -88,7 +88,7 @@ public abstract class RangeCondition<T> : Condition where T : struct, IComparabl
     /// </summary>
     /// <value>ValueRange</value>
     [CanBeNull]
-    public string Value { get; private set; } = null!;
+    public string Value { get; private set; } = null;
 
     /// <summary>
     /// Range of values to check against (as a range operator).
@@ -98,7 +98,7 @@ public abstract class RangeCondition<T> : Condition where T : struct, IComparabl
         get => _range;
         private set => _range = value;
     }
-    private RangeOperator<T> _range;
+    RangeOperator<T> _range;
 
     /// <summary>
     /// Default range of values for this Condition, if a lower or upper bound is not specified.

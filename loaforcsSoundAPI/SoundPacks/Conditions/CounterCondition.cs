@@ -24,13 +24,6 @@ public class CounterCondition : RangeCondition<int> {
 	protected override RangeOperator<int> DefaultRange => new(int.MinValue, int.MaxValue);
 
 	/// <summary>
-	/// Range of values to check against
-	/// </summary>
-	/// <value>ValueRange</value>
-	/// <example>1</example>
-	public string Value { get; private set; }
-
-	/// <summary>
 	/// Resets after reaching this number. Inclusive.
 	/// </summary>
 	/// <value><see cref="int"/></value>
