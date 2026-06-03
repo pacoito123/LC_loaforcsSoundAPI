@@ -1,12 +1,9 @@
-﻿namespace loaforcsSoundAPI.SoundPacks.Data.Conditions;
+﻿using UnityEngine;
 
-/// <summary>
-/// Context interface.
-/// </summary>
-public interface IContext;
+namespace loaforcsSoundAPI.SoundPacks.Data.Conditions;
 
-class DefaultConditionContext : IContext {
-	DefaultConditionContext() { }
+struct DefaultConditionContext(AudioSource source) : IContext {
+	internal static readonly DefaultConditionContext DEFAULT = new DefaultConditionContext(null);
 
-	internal static readonly DefaultConditionContext DEFAULT = new DefaultConditionContext();
+	public readonly AudioSource Source => source;
 }

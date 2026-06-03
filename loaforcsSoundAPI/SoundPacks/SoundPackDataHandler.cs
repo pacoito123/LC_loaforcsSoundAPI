@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using loaforcsSoundAPI.SoundPacks.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using UnityEngine;
@@ -8,11 +7,11 @@ using UnityEngine;
 namespace loaforcsSoundAPI.SoundPacks;
 
 static class SoundPackDataHandler {
-	static List<SoundPack> _loadedPacks = [ ];
+	static List<SoundPack> _loadedPacks = [];
 
 	internal static IReadOnlyList<SoundPack> LoadedPacks => _loadedPacks.AsReadOnly();
 
-	internal static Dictionary<string, List<SoundReplacementGroup>> SoundReplacements = [ ];
+	internal static Dictionary<string, List<SoundReplacementGroup>> SoundReplacements = [];
 
 
 	// this seems kinda in-efficent but i dont really care
@@ -37,20 +36,31 @@ static class SoundPackDataHandler {
 
 	internal static void AddReplacement(SoundReplacementGroup group) {
 		foreach(string match in group.Matches) {
-			string clipName = match.Split(":").Last();
+			string[] splitMatch = match.Split(':', StringSplitOptions.RemoveEmptyEntries);
+			if(splitMatch.Length == 0) continue;
+			string clipName = splitMatch[^1];
 			if(!SoundReplacements.TryGetValue(clipName, out List<SoundReplacementGroup> existingGroups)) {
-				existingGroups = [ ];
+				existingGroups = [];
 			}
 
 			if(existingGroups.Contains(group)) continue;
-			existingGroups.Add(group);
+			if(existingGroups.Count == 0 || existingGroups[0].Priority >= group.Priority) {
+				existingGroups.Insert(0, group);
+			} else if(existingGroups[^1].Priority <= group.Priority) {
+				existingGroups.Add(group);
+			} else {
+				int index = existingGroups.FindIndex(existingGroup => existingGroup.Priority >= group.Priority);
+				existingGroups.Insert(index, group);
+			}
 			SoundReplacements[clipName] = existingGroups;
 		}
 	}
 
 	internal static void RemoveReplacement(SoundReplacementGroup group) {
 		foreach(string match in group.Matches) {
-			string clipName = match.Split(":").Last();
+			string[] splitMatch = match.Split(':', StringSplitOptions.RemoveEmptyEntries);
+			if(splitMatch.Length == 0) continue;
+			string clipName = splitMatch[^1];
 
 			SoundReplacements[clipName].Remove(group);
 		}
