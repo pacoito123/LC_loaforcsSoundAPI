@@ -50,10 +50,16 @@ public class SoundReplacementGroup : Conditional, IValidatable {
 		Matches.AddRange(corrected);
 	}
 
-	internal void QueueSounds(IAudioClipLoader audioClipLoader, SoundPackLoadPipeline.SkippedResults results = null) {
+	internal void QueueSounds(IAudioClipLoader audioClipLoader, SoundPackLoadPipeline.SkippedResults results = null, HashSet<SoundInstance> sharedSounds = null, Dictionary<string, SoundInstance> uniqueSounds = null) {
 		foreach(SoundInstance sound in Sounds) {
 			if(sound.ShouldSkip()) {
 				if(results != null) results.Sounds++;
+				continue;
+			}
+
+			if(uniqueSounds?.TryAdd(sound.FullPath, sound) == false) {
+				sharedSounds?.Add(sound);
+				if(results != null) results.Shared++;
 				continue;
 			}
 
