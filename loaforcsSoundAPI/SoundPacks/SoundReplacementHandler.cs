@@ -54,7 +54,7 @@ static class SoundReplacementHandler {
 			return false;
 		}
 
-		if(@event.Data.ReplacedWith != null && @event.Data.ReplacedWith.UpdateEveryFrame) {
+		if(!@event.IsOneShot && @event.Data.ReplacedWith != null && @event.Data.ReplacedWith.UpdateEveryFrame) {
 			return false;
 		}
 
@@ -179,7 +179,7 @@ static class SoundReplacementHandler {
 			SoundReport.PlayedSound playedSound = new SoundReport.PlayedSound($"{name[TOKEN_PARENT_NAME]}:{name[TOKEN_OBJECT_NAME]}:{name[TOKEN_CLIP_NAME]}", className, source.playOnAwake);
 
 			if(!SoundReportHandler.CurrentReport.PlayedSounds.Any(playedSound.Equals))
-				// only add new unique ones
+			// only add new unique ones
 			{
 				SoundReportHandler.CurrentReport.PlayedSounds.Add(playedSound);
 			}

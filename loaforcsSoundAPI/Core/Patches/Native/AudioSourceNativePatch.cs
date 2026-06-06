@@ -49,7 +49,7 @@ static class AudioSourceNativePatch {
 
 		AudioSourceAdditionalData data = AudioSourceAdditionalData.GetOrCreate(source);
 
-		AudioSourcePlayEvent @event = new AudioSourcePlayEvent(source, data.OriginalClip, isOneShot: false); // isOneShot... maybe?
+		AudioSourcePlayEvent @event = new AudioSourcePlayEvent(source, data.OriginalClip, isOneShot: false);
 
 		if(SoundReplacementHandler.TryReplaceAudio(in @event, out ReplacementResult? result)) {
 			data.RealClip = result.Value.ReplacedClip;

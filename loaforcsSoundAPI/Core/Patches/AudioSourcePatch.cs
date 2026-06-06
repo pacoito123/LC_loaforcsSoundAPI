@@ -19,7 +19,7 @@ static class AudioSourcePatch {
 			return true; // returning true here gives the default unity warning
 		}
 
-		AudioSourcePlayEvent @event = new AudioSourcePlayEvent(__instance, clip, true);
+		AudioSourcePlayEvent @event = new AudioSourcePlayEvent(__instance, clip, isOneShot: true);
 
 		if(SoundReplacementHandler.TryReplaceAudio(in @event, out ReplacementResult? result)) {
 			if(result.Value.IsUpdateEveryFrame) {
