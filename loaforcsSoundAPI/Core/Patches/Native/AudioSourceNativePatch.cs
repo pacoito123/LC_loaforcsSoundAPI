@@ -49,12 +49,10 @@ static class AudioSourceNativePatch {
 
 		AudioSourceAdditionalData data = AudioSourceAdditionalData.GetOrCreate(source);
 
-		if(SoundReplacementHandler.TryReplaceAudio(data.Source, data.OriginalClip, out AudioClip replacement)) {
-			if(!replacement) {
-				return;
-			}
+		AudioSourcePlayEvent @event = new AudioSourcePlayEvent(source, data.OriginalClip, isOneShot: false); // isOneShot... maybe?
 
-			data.RealClip = replacement;
+		if(SoundReplacementHandler.TryReplaceAudio(in @event, out ReplacementResult? result)) {
+			data.RealClip = result.Value.ReplacedClip;
 		}
 
 		Debuggers.NativeBackend?.Log($"AudioSource::Play() with native detour. IntPtr self = {self}");

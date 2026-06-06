@@ -72,7 +72,7 @@ static class SoundReplacementHandler {
 
 		if(
 			!TryProcessName(ref name, @event.Source, @event.Clip) ||
-			!TryGetReplacementClip(name, out SoundReplacementGroup group, out AudioClip newClip, @event.Context ?? DefaultConditionContext.DEFAULT)
+			!TryGetReplacementClip(name, out SoundReplacementGroup group, out AudioClip newClip, @event.Context ?? new DefaultConditionContext(@event.Source))
 		) {
 			ArrayPool<string>.Shared.Return(name);
 			return false;
