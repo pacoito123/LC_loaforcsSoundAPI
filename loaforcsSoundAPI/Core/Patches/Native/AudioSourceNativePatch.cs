@@ -53,6 +53,10 @@ static class AudioSourceNativePatch {
 
 		if(SoundReplacementHandler.TryReplaceAudio(in @event, out ReplacementResult? result)) {
 			data.RealClip = result.Value.ReplacedClip;
+			if(data.ReplacedWith?.Volume.HasValue == true) {
+				source.volume = data.ReplacedWith.Volume.Value;
+				Debuggers.AudioSourceAdditionalData?.Log($"Changed {source} (gameobject: {source.gameObject.name}) volume to: {source.volume}");
+			}
 		}
 
 		Debuggers.NativeBackend?.Log($"AudioSource::Play() with native detour. IntPtr self = {self}");

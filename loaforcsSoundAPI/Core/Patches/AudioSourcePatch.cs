@@ -31,6 +31,10 @@ static class AudioSourcePatch {
 					clone.clip = result.Value.ReplacedClip;
 					data.ReplacedWith = result.Value.ReplacedWith; // setting replaced with here is important, see SoundReplacementHandler.ShouldBeReplaced (would have to handle DisableReplacing manually instead)
 					@event.Data.ReplacedWith = null; // undo SoundReplacementHandler.TryReplaceAudio setting this, this is icky
+					if(data.ReplacedWith?.Volume.HasValue == true) {
+						clone.volume = data.ReplacedWith.Volume.Value;
+						Debuggers.AudioSourceAdditionalData?.Log($"Changed {clone} (gameobject: {clone.gameObject.name}) volume to: {clone.volume}");
+					}
 					clone.PlayThenDestroy();
 
 					return false;
@@ -40,6 +44,10 @@ static class AudioSourcePatch {
 			}
 
 			clip = result.Value.ReplacedClip;
+			if(result.Value.ReplacedWith?.Volume.HasValue == true) {
+				__instance.volume = result.Value.ReplacedWith.Volume.Value;
+				Debuggers.AudioSourceAdditionalData?.Log($"Changed {__instance} (gameobject: {__instance.gameObject.name}) volume to: {__instance.volume}");
+			}
 		}
 
 		return true;

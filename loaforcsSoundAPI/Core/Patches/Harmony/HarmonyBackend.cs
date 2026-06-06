@@ -45,6 +45,10 @@ static class HarmonyBackend {
 
 		if(SoundReplacementHandler.TryReplaceAudio(in @event, out ReplacementResult? result)) {
 			data.RealClip = result.Value.ReplacedClip;
+			if(data.ReplacedWith?.Volume.HasValue == true) {
+				__instance.volume = data.ReplacedWith.Volume.Value;
+				Debuggers.AudioSourceAdditionalData?.Log($"Changed {__instance} (gameobject: {__instance.gameObject.name}) volume to: {__instance.volume}");
+			}
 		}
 
 		return true;

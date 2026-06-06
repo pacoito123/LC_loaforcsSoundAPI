@@ -36,6 +36,7 @@ public class SoundReplacementGroup : Conditional, IValidatable {
 	public List<SoundInstance> Sounds { get; private set; } = [];
 
 	public bool UpdateEveryFrame { get; internal set; }
+	public float? Volume { get; internal set; }
 
 	public override void OnRegistered() {
 		base.OnRegistered();
@@ -107,6 +108,10 @@ public class SoundReplacementGroup : Conditional, IValidatable {
 		foreach(SoundInstance sound in Sounds) {
 			sound.Parent = this; // !!! - Setting data while doing validation. If this ever breaks it's here!
 			results.AddRange(sound.Validate());
+		}
+
+		if(Volume.HasValue) {
+			Volume = Math.Clamp(Volume.Value, 0.0f, 1.0f);
 		}
 
 		return results;
