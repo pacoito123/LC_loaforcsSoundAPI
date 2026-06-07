@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using loaforcsSoundAPI.Core.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 
@@ -87,7 +86,6 @@ public abstract class RangeCondition<T> : Condition where T : struct, IComparabl
     /// Range of values to check against (as a string to be parsed).
     /// </summary>
     /// <value>ValueRange</value>
-    [CanBeNull]
     public string Value { get; private set; } = null;
 
     /// <summary>
