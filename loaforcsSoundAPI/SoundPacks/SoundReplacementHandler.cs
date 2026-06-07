@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using BepInEx.Configuration;
 using JetBrains.Annotations;
 using loaforcsSoundAPI.Core;
+using loaforcsSoundAPI.Core.Patches;
 using loaforcsSoundAPI.Reporting;
 using loaforcsSoundAPI.Reporting.Data;
 using loaforcsSoundAPI.SoundPacks.Conditions;
@@ -84,8 +85,10 @@ static class SoundReplacementHandler {
 		result = new ReplacementResult(newClip, group);
 
 		// todo: this should probably not be handled here as with UEFOneShotFix the resulting AudioSource will be different than the one passed in the event.
-		// it should be handled instead in the patches where 
-		@event.Data.ReplacedWith = group;
+		// it should be handled instead in the patches where
+		if(!PatchConfig.UEFOneShotWorkaround || !result.Value.IsUpdateEveryFrame || !@event.IsOneShot) {
+			@event.Data.ReplacedWith = group;
+		}
 
 		if(result.Value.IsUpdateEveryFrame) {
 			Debuggers.UpdateEveryFrame?.Log($"swapped to a clip that uses update_every_frame !!! isOneShot = {@event.IsOneShot}");

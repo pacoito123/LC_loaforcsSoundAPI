@@ -1,11 +1,9 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using loaforcsSoundAPI.Core.Networking;
 using loaforcsSoundAPI.SoundPacks;
-using loaforcsSoundAPI.SoundPacks.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using loaforcsSoundAPI.Core.Util.Extensions;
 using UnityEngine;
@@ -124,12 +122,12 @@ public static class SoundAPI {
 		// todo: surely there is going to be a cleaner way to do this??
 		AudioSource newSource = target.AddComponent<AudioSource>();
 		newSource.clip = source.clip;
-		newSource.loop = source.loop;
+		newSource.loop = (flags & AudioSourceCopyFlags.DontCopyLoop) == 0 && source.loop;
 		newSource.mute = source.mute;
 		newSource.pitch = source.pitch;
 		newSource.outputAudioMixerGroup = source.outputAudioMixerGroup;
 		newSource.priority = source.priority;
-		newSource.spatialize = source.spatialize;
+		newSource.spatialize = (flags & AudioSourceCopyFlags.DontCopySpatialize) == 0 && source.spatialize;
 		newSource.spread = source.spread;
 		newSource.volume = source.volume;
 		newSource.bypassEffects = source.bypassEffects;
@@ -142,13 +140,16 @@ public static class SoundAPI {
 		newSource.bypassReverbZones = source.bypassReverbZones;
 		newSource.ignoreListenerPause = source.ignoreListenerPause;
 		newSource.ignoreListenerVolume = source.ignoreListenerVolume;
-		if((flags & AudioSourceCopyFlags.DontCopyPlayOnAwake) == 0) { // double negative isn't great
-			newSource.playOnAwake = source.playOnAwake;
-		}
+		newSource.playOnAwake = (flags & AudioSourceCopyFlags.DontCopyPlayOnAwake) == 0 && source.playOnAwake; // double negative isn't great
 
 		newSource.reverbZoneMix = source.reverbZoneMix;
 		newSource.spatializePostEffects = source.spatializePostEffects;
 		newSource.velocityUpdateMode = source.velocityUpdateMode;
+
+		newSource.SetCustomCurve(AudioSourceCurveType.CustomRolloff, source.GetCustomCurve(AudioSourceCurveType.CustomRolloff));
+		newSource.SetCustomCurve(AudioSourceCurveType.SpatialBlend, source.GetCustomCurve(AudioSourceCurveType.SpatialBlend));
+		newSource.SetCustomCurve(AudioSourceCurveType.ReverbZoneMix, source.GetCustomCurve(AudioSourceCurveType.ReverbZoneMix));
+		newSource.SetCustomCurve(AudioSourceCurveType.Spread, source.GetCustomCurve(AudioSourceCurveType.Spread));
 
 		return newSource;
 	}

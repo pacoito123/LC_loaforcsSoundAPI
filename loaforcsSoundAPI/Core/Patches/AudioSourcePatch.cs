@@ -26,11 +26,10 @@ static class AudioSourcePatch {
 				if(PatchConfig.UEFOneShotWorkaround) {
 					GameObject cloneTarget = new GameObject($"UEFOneShotFix - {clip.name}");
 					cloneTarget.transform.SetParent(__instance.transform, false);
-					AudioSource clone = SoundAPI.CopyAudioSource(__instance, cloneTarget, AudioSourceCopyFlags.DontCopyPlayOnAwake);
+					AudioSource clone = SoundAPI.CopyAudioSource(__instance, cloneTarget, AudioSourceCopyFlags.DontCopyPlayOnAwake | AudioSourceCopyFlags.DontCopySpatialize | AudioSourceCopyFlags.DontCopyLoop);
 					AudioSourceAdditionalData data = AudioSourceAdditionalData.GetOrCreate(clone);
 					clone.clip = result.Value.ReplacedClip;
 					data.ReplacedWith = result.Value.ReplacedWith; // setting replaced with here is important, see SoundReplacementHandler.ShouldBeReplaced (would have to handle DisableReplacing manually instead)
-					@event.Data.ReplacedWith = null; // undo SoundReplacementHandler.TryReplaceAudio setting this, this is icky
 					if(data.ReplacedWith?.Volume.HasValue == true) {
 						clone.volume = data.ReplacedWith.Volume.Value;
 						Debuggers.AudioSourceAdditionalData?.Log($"Changed {clone} (gameobject: {clone.gameObject.name}) volume to: {clone.volume}");
