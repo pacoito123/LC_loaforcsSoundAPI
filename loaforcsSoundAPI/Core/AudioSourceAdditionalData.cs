@@ -99,6 +99,11 @@ public class AudioSourceAdditionalData {
 	/// </summary>
 	public IContext CurrentContext { get; set; }
 
+	/// <summary>
+	/// Volume scale for this Audio Source (mainly for OneShots).
+	/// </summary>
+	public float VolumeScale { get; set; } = 1.0f;
+
 	internal void Update() {
 		if(!RequiresUpdateFunction() || !AudioSourceIsPlaying()) {
 			return;
@@ -117,6 +122,17 @@ public class AudioSourceAdditionalData {
 		}
 
 		Debuggers.UpdateEveryFrame?.Log("new clip found, swapping!!");
+
+		if(sound.Parent?.Volume.HasValue == true) {
+			Source.volume = sound.Parent.Volume.Value * VolumeScale;
+			if(Debuggers.AudioSourceAdditionalData != null) {
+				string volume = $"{Source.volume}";
+				if(Source.volume != sound.Parent.Volume.Value) {
+					volume += $" ({sound.Parent.Volume.Value} * {VolumeScale})";
+				}
+				Debuggers.AudioSourceAdditionalData?.Log($"Changed {Source} (gameobject: {Source.name}) volume to: {volume})");
+			}
+		}
 
 
 		float currentTime = Source.time;

@@ -1,9 +1,7 @@
-﻿using System;
-using HarmonyLib;
+﻿using HarmonyLib;
 using loaforcsSoundAPI.Core.Util.Extensions;
 using loaforcsSoundAPI.SoundPacks;
 using UnityEngine;
-using UnityEngine.Experimental.Audio;
 
 namespace loaforcsSoundAPI.Core.Patches;
 
@@ -14,7 +12,7 @@ static class AudioSourcePatch {
 	// todo: this should maybe be supported in NativeBackend?
 	[HarmonyPrefix]
 	[HarmonyPatch(nameof(AudioSource.PlayOneShot), [ typeof(AudioClip), typeof(float) ])]
-	static bool PlayOneShot(AudioSource __instance, ref AudioClip clip) {
+	static bool PlayOneShot(AudioSource __instance, ref AudioClip clip, float volumeScale) {
 		if(!clip) {
 			return true; // returning true here gives the default unity warning
 		}
@@ -29,10 +27,18 @@ static class AudioSourcePatch {
 					AudioSource clone = SoundAPI.CopyAudioSource(__instance, cloneTarget, AudioSourceCopyFlags.DontCopyPlayOnAwake | AudioSourceCopyFlags.DontCopySpatialize | AudioSourceCopyFlags.DontCopyLoop);
 					AudioSourceAdditionalData data = AudioSourceAdditionalData.GetOrCreate(clone);
 					clone.clip = result.Value.ReplacedClip;
+					clone.volume *= data.VolumeScale;
 					data.ReplacedWith = result.Value.ReplacedWith; // setting replaced with here is important, see SoundReplacementHandler.ShouldBeReplaced (would have to handle DisableReplacing manually instead)
+					data.VolumeScale = volumeScale;
 					if(data.ReplacedWith?.Volume.HasValue == true) {
-						clone.volume = data.ReplacedWith.Volume.Value;
-						Debuggers.AudioSourceAdditionalData?.Log($"Changed {clone} (gameobject: {clone.gameObject.name}) volume to: {clone.volume}");
+						clone.volume = data.ReplacedWith.Volume.Value * volumeScale;
+						if(Debuggers.AudioSourceAdditionalData != null) {
+							string volume = $"{clone.volume}";
+							if(clone.volume != result.Value.ReplacedWith.Volume.Value) {
+								volume += $" ({result.Value.ReplacedWith.Volume.Value} * {volumeScale})";
+							}
+							Debuggers.AudioSourceAdditionalData?.Log($"Changed {clone} (gameobject: {clone.name}) volume to: {volume})");
+						}
 					}
 					clone.PlayThenDestroy();
 
@@ -44,8 +50,14 @@ static class AudioSourcePatch {
 
 			clip = result.Value.ReplacedClip;
 			if(result.Value.ReplacedWith?.Volume.HasValue == true) {
-				__instance.volume = result.Value.ReplacedWith.Volume.Value;
-				Debuggers.AudioSourceAdditionalData?.Log($"Changed {__instance} (gameobject: {__instance.gameObject.name}) volume to: {__instance.volume}");
+				__instance.volume = result.Value.ReplacedWith.Volume.Value * volumeScale;
+				if(Debuggers.AudioSourceAdditionalData != null) {
+					string volume = $"{__instance.volume}";
+					if(__instance.volume != result.Value.ReplacedWith.Volume.Value) {
+						volume += $" ({result.Value.ReplacedWith.Volume.Value} * {volumeScale})";
+					}
+					Debuggers.AudioSourceAdditionalData?.Log($"Changed {__instance} (gameobject: {__instance.name}) volume to: {volume})");
+				}
 			}
 		}
 
