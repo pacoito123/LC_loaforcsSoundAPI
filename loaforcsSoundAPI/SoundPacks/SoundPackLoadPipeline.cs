@@ -18,8 +18,6 @@ using UnityEngine.Networking;
 namespace loaforcsSoundAPI.SoundPacks;
 
 static class SoundPackLoadPipeline {
-	static volatile int _activeThreads;
-
 	// todo: maybe remove
 	internal static event Action OnFinishedPipeline = delegate { };
 	internal static Dictionary<string, List<string>> mappings = [ ];
@@ -35,6 +33,8 @@ static class SoundPackLoadPipeline {
 	}
 
 	internal static async Task StartPipeline() {
+		loaforcsSoundAPI.Logger.LogInfo("Starting Sound-pack loading pipeline");
+
 		Stopwatch completeLoadingTimer = Stopwatch.StartNew();
 		Stopwatch timer = Stopwatch.StartNew();
 
@@ -112,7 +112,7 @@ static class SoundPackLoadPipeline {
 		// Delay until splash screens are done and we can check in on the unity web requests
 		loaforcsSoundAPI.Logger.LogInfo("Waiting for splash screens to complete to continue...");
 		completeLoadingTimer.Stop();
-		await Task.Delay(1);
+		await Task.Yield();
 		loaforcsSoundAPI.Logger.LogInfo("Splash screens done! Continuing pipeline");
 		loaforcsSoundAPI.Logger.LogWarning("The game will freeze for a moment!");
 		timer.Restart();
@@ -136,7 +136,6 @@ static class SoundPackLoadPipeline {
 		OnFinishedPipeline();
 		mappings = null;
 
-		loaforcsSoundAPI.Logger.LogDebug($"Active Threads that are left over: {_activeThreads}");
 		loaforcsSoundAPI.Logger.LogInfo($"Entire load process took an effective {completeLoadingTimer.ElapsedMilliseconds}ms");
 	}
 
