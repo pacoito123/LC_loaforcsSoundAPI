@@ -242,6 +242,9 @@ static class SoundReplacementHandler {
 			}
 		}
 
+		Debuggers.SoundReplacementHandler?.Log($"chosen sound: {sound}");
+		if(sound.Clip == null) return true;
+
 		clip = sound.Clip;
 		Debuggers.SoundReplacementHandler?.Log("done, dumping stack trace!");
 		Debuggers.SoundReplacementHandler?.Log(string.Join(", ", group.Matches));

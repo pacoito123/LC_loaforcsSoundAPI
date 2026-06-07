@@ -57,4 +57,8 @@ public class SoundInstance : Conditional, IValidatable {
 			Parent.Pack = value;
 		}
 	}
+
+	public override string ToString() {
+		return $"Sound at '{Sound}' from pack '{Pack.Name}' with a weight of {Weight}\n\tClip name: {((Clip != null) ? Clip.name : "null")}";
+	}
 }

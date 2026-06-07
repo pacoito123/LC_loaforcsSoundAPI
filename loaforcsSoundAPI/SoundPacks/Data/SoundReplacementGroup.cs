@@ -124,4 +124,10 @@ public class SoundReplacementGroup : Conditional, IValidatable {
 			Parent.Pack = value;
 		}
 	}
+
+	public override string ToString() {
+		string matches = string.Join(", ", Matches);
+		string sounds = string.Join(", ", Sounds);
+		return $"Parent: {Parent}\nMatches: {matches}\nSounds: {sounds}";
+	}
 }
