@@ -35,8 +35,8 @@ static class AudioSourceNativePatch {
 	static void PatchedRemoveFromManager(IntPtr self) {
 		AudioSource source = NativeBackend.GetScriptingWrapper<AudioSource>(self);
 
-		if(AudioSourceAdditionalData.TryGet(source, out AudioSourceAdditionalData data)) {
-			Debuggers.NativeBackend?.Log($"AudioSource::RemoveFromManager() cleaned up an audio source");
+		if(AudioSourceAdditionalData.TryGet(source, out AudioSourceAdditionalData data) && data.ReplacedWith?.UpdateEveryFrame != true) {
+			Debuggers.NativeBackend?.Log($"AudioSource::RemoveFromManager() cleaned up an audio source: {source}");
 			SoundAPIAudioManager.Remove(data);
 		}
 

@@ -78,14 +78,8 @@ public class AudioSourceAdditionalData {
 
 			// todo: kind of icky just modifying the list raw
 			if(RequiresUpdateFunction()) {
-				if(SoundAPIAudioManager.liveAudioSourceData.Contains(this)) {
-					return; // dont add to list twice
-				}
-
-				SoundAPIAudioManager.liveAudioSourceData.Add(this);
-			} else if(SoundAPIAudioManager.liveAudioSourceData.Contains(this)) {
-				SoundAPIAudioManager.liveAudioSourceData.Remove(this);
-			}
+								SoundAPIAudioManager.liveAudioSourceData.Add(this);
+						}
 		}
 	}
 

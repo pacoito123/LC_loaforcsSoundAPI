@@ -26,6 +26,7 @@ static class AudioSourcePatch {
 					cloneTarget.transform.SetParent(__instance.transform, false);
 					AudioSource clone = SoundAPI.CopyAudioSource(__instance, cloneTarget, AudioSourceCopyFlags.DontCopyPlayOnAwake | AudioSourceCopyFlags.DontCopySpatialize | AudioSourceCopyFlags.DontCopyLoop);
 					AudioSourceAdditionalData data = AudioSourceAdditionalData.GetOrCreate(clone);
+					SoundAPIAudioManager.liveAudioSourceData.Add(data); // Set UEF OneShot as a live AudioSource, for proper cleanup after it gets destroyed.
 					clone.clip = result.Value.ReplacedClip;
 					clone.volume *= data.VolumeScale;
 					data.ReplacedWith = result.Value.ReplacedWith; // setting replaced with here is important, see SoundReplacementHandler.ShouldBeReplaced (would have to handle DisableReplacing manually instead)
