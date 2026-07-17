@@ -11,7 +11,7 @@ static class AudioSourcePatch {
 
 	// todo: this should maybe be supported in NativeBackend?
 	[HarmonyPrefix]
-	[HarmonyPatch(nameof(AudioSource.PlayOneShot), [ typeof(AudioClip), typeof(float) ])]
+	[HarmonyPatch(nameof(AudioSource.PlayOneShot), [typeof(AudioClip), typeof(float)])]
 	static bool PlayOneShot(AudioSource __instance, ref AudioClip clip, float volumeScale) {
 		if(!clip) {
 			return true; // returning true here gives the default unity warning
@@ -69,7 +69,7 @@ static class AudioSourcePatch {
 	[HarmonyPriority(Priority.Last)]
 	[HarmonyPrefix]
 	static void UpdateOriginalClip(AudioSource __instance, AudioClip value, bool __runOriginal) {
-		if(!__runOriginal) {
+		if(!__runOriginal || bypassSpoofing) {
 			return;
 		}
 
