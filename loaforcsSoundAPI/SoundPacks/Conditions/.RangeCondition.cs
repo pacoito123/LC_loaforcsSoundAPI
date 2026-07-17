@@ -16,7 +16,7 @@ public struct RangeOperator<T>(T min, T max) where T : struct, IComparable<T> {
         return min.CompareTo(value) <= 0 && max.CompareTo(value) >= 0;
     }
 
-    public override readonly string ToString() {
+    public readonly override string ToString() {
         return $"{min}..{max}";
     }
 

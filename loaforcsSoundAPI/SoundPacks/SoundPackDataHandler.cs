@@ -44,13 +44,15 @@ static class SoundPackDataHandler {
 			}
 
 			if(existingGroups.Contains(group)) continue;
-			if(existingGroups.Count == 0 || existingGroups[0].Priority >= group.Priority) {
-				existingGroups.Insert(0, group);
-			} else if(existingGroups[^1].Priority <= group.Priority) {
+			if(existingGroups.Count == 0 || existingGroups[^1].Priority >= group.Priority) {
 				existingGroups.Add(group);
 			} else {
-				int index = existingGroups.FindIndex(existingGroup => existingGroup.Priority >= group.Priority);
-				existingGroups.Insert(index, group);
+				for(int i = existingGroups.Count - 1; i >= 0; i--) {
+					if(existingGroups[i].Priority <= group.Priority) {
+						existingGroups.Insert(i, group);
+						break;
+					}
+				}
 			}
 			SoundReplacements[clipName] = existingGroups;
 		}

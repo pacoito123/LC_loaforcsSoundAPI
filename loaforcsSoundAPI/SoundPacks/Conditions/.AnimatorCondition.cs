@@ -83,7 +83,7 @@ public abstract class AnimatorCondition : Condition {
                 break;
             case AnimatorParamType.Integer:
                 if(!RangeOperator<int>.ValidateRangeOperator(Value, out _intRange, out result, static (parameter, ref result) =>
-                    string.IsNullOrEmpty(parameter) ||  int.TryParse(parameter, out result))) return [result];
+                    string.IsNullOrEmpty(parameter) || int.TryParse(parameter, out result))) return [result];
                 break;
             case AnimatorParamType.None:
             default:

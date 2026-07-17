@@ -5,20 +5,14 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
-using BepInEx.Configuration;
-using JetBrains.Annotations;
 using loaforcsSoundAPI.Core;
 using loaforcsSoundAPI.Core.Patches;
 using loaforcsSoundAPI.Reporting;
 using loaforcsSoundAPI.Reporting.Data;
-using loaforcsSoundAPI.SoundPacks.Conditions;
 using loaforcsSoundAPI.SoundPacks.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Debug = UnityEngine.Debug;
-using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
 namespace loaforcsSoundAPI.SoundPacks;
@@ -181,7 +175,7 @@ static class SoundReplacementHandler {
 
 			SoundReport.PlayedSound playedSound = new SoundReport.PlayedSound($"{name[TOKEN_PARENT_NAME]}:{name[TOKEN_OBJECT_NAME]}:{name[TOKEN_CLIP_NAME]}", className, source.playOnAwake);
 
-			if(!SoundReportHandler.CurrentReport.PlayedSounds.Any(playedSound.Equals))
+			if(SoundReportHandler.CurrentReport.PlayedSounds.FindIndex(playedSound.Equals) == -1)
 			// only add new unique ones
 			{
 				SoundReportHandler.CurrentReport.PlayedSounds.Add(playedSound);
@@ -207,18 +201,14 @@ static class SoundReplacementHandler {
 
 		Debuggers.SoundReplacementHandler?.Log("sound dictionary hit");
 
-		possibleCollections = possibleCollections
-			.Where(it => it.Parent.Evaluate(context) && it.Evaluate(context) && CheckGroupMatches(it, name))
-			.ToList();
-
-		if(possibleCollections.Count == 0) {
+		group = possibleCollections.Find(it => it.Parent.Evaluate(context) && it.Evaluate(context) && CheckGroupMatches(it, name));
+		if(group == null) {
 			return false;
 		}
 
 		Debuggers.SoundReplacementHandler?.Log("sound group that matches");
 
-		group = possibleCollections[Random.Range(0, possibleCollections.Count)];
-		List<SoundInstance> replacements = group.Sounds.Where(it => it.Clip && it.Evaluate(context)).ToList();
+		List<SoundInstance> replacements = group.Sounds.FindAll(it => it.Clip && it.Evaluate(context));
 		if(replacements.Count == 0) {
 			return false;
 		}
