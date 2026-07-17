@@ -4,7 +4,7 @@ using loaforcsSoundAPI.SoundPacks.AudioClipLoading;
 
 namespace loaforcsSoundAPI.SoundPacks.Data;
 
-public class ReplacementsRegistry(SoundPack pack, string relativePath) : Registry<SoundReplacementCollection>(pack, relativePath) {
+public class ReplacementsRegistry(SoundPack pack, string relativePath) : FileRegistry<SoundReplacementCollection>(pack, relativePath) {
 	protected override void HotLoadAdd(SoundReplacementCollection item) {
 		AsyncAudioClipLoader clipLoader = new AsyncAudioClipLoader();
 		foreach(SoundReplacementGroup group in item.Replacements) {

@@ -6,6 +6,7 @@ using System.Reflection;
 using BepInEx;
 using loaforcsSoundAPI.Core.Data;
 using loaforcsSoundAPI.SoundPacks;
+using loaforcsSoundAPI.SoundPacks.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -111,6 +112,24 @@ public static class JSONDataLoader {
 			}
 
 			return property;
+		}
+
+		protected override JsonConverter ResolveContractConverter(Type objectType) {
+			TypeInfo typeInfo = objectType.GetTypeInfo();
+
+			JsonConverterAttribute jsonConverterAttribute = typeInfo.GetCustomAttribute<JsonConverterAttribute>();
+			TypeInfo converterTypeInfo = jsonConverterAttribute?.ConverterType?.GetTypeInfo();
+
+			if(converterTypeInfo?.IsGenericTypeDefinition == true) {
+				while(typeInfo != null) {
+					if(typeInfo.IsGenericType && typeInfo.GetGenericTypeDefinition() == typeof(Registry<,>)) {
+						return (JsonConverter) Activator.CreateInstance(converterTypeInfo.MakeGenericType([.. typeInfo.GenericTypeArguments, objectType]), jsonConverterAttribute.ConverterParameters);
+					}
+					typeInfo = typeInfo.BaseType?.GetTypeInfo();
+				}
+			}
+
+			return base.ResolveContractConverter(objectType);
 		}
 	}
 

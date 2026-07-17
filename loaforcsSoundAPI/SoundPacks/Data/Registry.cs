@@ -1,28 +1,15 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using loaforcsSoundAPI.Core;
-using loaforcsSoundAPI.Core.Data;
-using loaforcsSoundAPI.Core.JSON;
-using loaforcsSoundAPI.Core.Util;
-using loaforcsSoundAPI.SoundPacks.AudioClipLoading;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace loaforcsSoundAPI.SoundPacks.Data;
 
-public class Registry<T> : IEnumerable<T> where T : class, IFilePathAware {
-	List<T> _items = [ ];
-
-	public Registry(SoundPack pack, string relativePath) {
-		Pack = pack;
-		RelativePath = relativePath;
-		AbsolutePath = Path.Combine(pack.PackFolder, relativePath);
-	}
-
-	public SoundPack Pack { get; }
-	public string RelativePath { get; }
-	public string AbsolutePath { get; }
+[JsonConverter(typeof(RegistryConverter<,,>))]
+public abstract class Registry<T, TCollection>() : IEnumerable<T> where TCollection : ICollection<T>, new() {
+	readonly TCollection _items = []; // Generic ICollection holding entries in this Registry.
+	internal JToken[] _temp; // Array holding JSON tokens to be parsed, in case it needs to be delayed.
 
 	public IEnumerator<T> GetEnumerator() {
 		return _items.GetEnumerator();
@@ -32,85 +19,53 @@ public class Registry<T> : IEnumerable<T> where T : class, IFilePathAware {
 		return GetEnumerator();
 	}
 
-	T TryLoadFile(string filePath) {
-		T item = JSONDataLoader.LoadFromFile<T>(filePath);
-		if(item == null) return default; // json error
-
-		if(item is IPackData pd) {
-			pd.Pack = Pack;
-		}
-
-		if(item is IValidatable validatable) {
-			if(!IValidatable.LogAndCheckValidationResult(
-				   $"loading '{LogFormats.FormatFilePath(filePath)}",
-				   validatable.Validate(),
-				   Pack.Logger
-			   )) {
-				return default;
+	public virtual void PopulateRegistry() {
+		for(int i = 0; i < _temp?.Length; i++) {
+			if(TryParse(out T value, _temp[i])) {
+				AddValue(value);
 			}
 		}
-
-		if(item is IRegistrationCallback callback) {
-			callback.OnRegistered();
-		}
-
-		_items.Add(item);
-		return item;
+		_temp = null;
+		OnRegistryPopulated();
 	}
 
-	internal void Load() {
-		if(!Directory.Exists(AbsolutePath)) return; // nothing to load!
+	public virtual void OnRegistryPopulated() { }
 
-		foreach(string file in Directory.GetFiles(AbsolutePath, "*.json", SearchOption.AllDirectories)) {
-			TryLoadFile(file);
-		}
+	public virtual bool TryParse(out T value, JToken token) {
+		value = token.ToObject<T>();
+		return value != null;
 	}
 
-	protected virtual void HotLoadAdd(T item) { }
-	protected virtual void HotLoadRemove(T item) { }
-
-	internal void EnableHotReload() {
-		FileSystemWatcher watcher = new FileSystemWatcher(AbsolutePath) {
-			NotifyFilter = NotifyFilters.Attributes | NotifyFilters.CreationTime | NotifyFilters.FileName | NotifyFilters.LastWrite,
-			Filter = "*.json",
-			IncludeSubdirectories = true
-		};
-
-		void UnloadOldFile(string fullPath) {
-			T existing = _items.FirstOrDefault(it => it.FilePath == fullPath);
-			if(existing != null) {
-				Debuggers.HotReload?.Log("\twas in registry, removing!");
-				_items.Remove(existing);
-				HotLoadRemove(existing);
+	public virtual void AddValue(T value) => _items.Add(value);
+	public virtual bool RemoveValue(T value) => _items.Remove(value);
+	public virtual bool ContainsValue(T value) => _items.Contains(value);
+	public virtual T FindValue(Predicate<T> match) {
+		foreach(T value in _items) {
+			if(match(value)) {
+				return value;
 			}
 		}
+		return default;
+	}
+}
 
-		void LoadNewFile(string fullPath) {
-			T item = TryLoadFile(fullPath);
-			if(item != null) {
-				HotLoadAdd(item);
-			}
+class RegistryConverter<T, TCollection, TRegistry> : JsonConverter<TRegistry> where TCollection : ICollection<T>, new() where TRegistry : Registry<T, TCollection>, new() {
+	public override TRegistry ReadJson(JsonReader reader, Type objectType, TRegistry existingValue, bool hasExistingValue, JsonSerializer serializer) {
+		JToken token = JToken.Load(reader);
+
+		if(token.Type is JTokenType.String) {
+			return new TRegistry() { _temp = [token] };
 		}
 
-		watcher.Created += (s, e) => {
-			Debuggers.HotReload?.Log($"Created: {LogFormats.FormatFilePath(e.FullPath)}");
-			LoadNewFile(e.FullPath);
-		};
-		watcher.Deleted += (s, e) => {
-			Debuggers.HotReload?.Log($"Deleted: {LogFormats.FormatFilePath(e.FullPath)}");
-			UnloadOldFile(e.FullPath);
-		};
-		watcher.Changed += (s, e) => {
-			Debuggers.HotReload?.Log($"Changed: {LogFormats.FormatFilePath(e.FullPath)}");
-			UnloadOldFile(e.FullPath);
-			LoadNewFile(e.FullPath);
-		};
-		watcher.Renamed += (s, e) => {
-			Debuggers.HotReload?.Log($"Renamed: {LogFormats.FormatFilePath(e.OldName)} -> {LogFormats.FormatFilePath(e.Name)}");
-			UnloadOldFile(e.OldFullPath);
-			LoadNewFile(e.FullPath);
-		};
+		if(token is JArray jsonArray) {
+			return new TRegistry() { _temp = [.. jsonArray] };
+		}
 
-		watcher.EnableRaisingEvents = true;
+		IJsonLineInfo lineInfo = reader as IJsonLineInfo;
+		throw new JsonReaderException($"Value '{token}' is not valid for a registry.", reader.Path, lineInfo?.LineNumber ?? 0, lineInfo?.LinePosition ?? 0, null);
+	}
+
+	public override void WriteJson(JsonWriter writer, TRegistry value, JsonSerializer serializer) {
+		throw new NotImplementedException("no.");
 	}
 }
