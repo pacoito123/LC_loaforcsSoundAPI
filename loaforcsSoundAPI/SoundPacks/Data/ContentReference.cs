@@ -1,0 +1,34 @@
+namespace loaforcsSoundAPI.SoundPacks.Data;
+
+public abstract class ContentReference {
+    public abstract bool Resolved { get; }
+    public abstract void Resolve();
+}
+
+public abstract class ContentReference<T>(string input) : ContentReference {
+    public T Value { get => _value; }
+    T _value;
+
+    public sealed override bool Resolved { get => _resolved && _value != null; }
+    bool _resolved;
+
+    public sealed override void Resolve() {
+        if(_resolved) return;
+        if(string.IsNullOrEmpty(input)) return;
+
+        if(TryResolve(input, out _value)) {
+            _resolved = true;
+
+            OnResolved();
+        }
+    }
+    protected virtual void OnResolved() { }
+
+    protected abstract bool TryResolve(string input, out T value);
+
+    public static implicit operator T(ContentReference<T> reference) => reference._value;
+
+    public override string ToString() {
+        return $"\"{input}\" - Resolved: {Resolved}";
+    }
+}

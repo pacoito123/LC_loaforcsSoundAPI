@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,7 +24,8 @@ public static class JSONDataLoader {
 		ContractResolver = new IncludePrivatePropertiesContractResolver(),
 		Converters = [
 			new MatchesJSONConverter(),
-			new ConditionConverter()
+			new ConditionConverter(),
+			new ContentReferenceConverter()
 		]
 	};
 
@@ -87,11 +89,11 @@ public static class JSONDataLoader {
 
 		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
 			JToken token = JToken.Load(reader);
-			if(token.Type == JTokenType.Array) {
-				return token.ToObject<List<string>>();
+			if(token is not JArray array) {
+				array = [token];
 			}
 
-			return new List<string> { token.ToString() };
+			return array.ToObject<List<string>>();
 		}
 
 		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
@@ -159,12 +161,42 @@ public static class JSONDataLoader {
 				return condition;
 			}
 
-			IJsonLineInfo? lineInfo = reader as IJsonLineInfo;
+			IJsonLineInfo lineInfo = reader as IJsonLineInfo;
 			throw new JsonReaderException($"{token} is not valid for a condition", reader.Path, lineInfo?.LineNumber ?? 0, lineInfo?.LinePosition ?? 0, null);
 		}
 
 		public override void WriteJson(JsonWriter writer, Condition value, JsonSerializer serializer) {
 			throw new NotImplementedException("no.");
+		}
+	}
+
+	class ContentReferenceConverter : JsonConverter {
+		public override bool CanConvert(Type objectType) {
+			return objectType.IsGenericType && objectType.GetGenericTypeDefinition() == typeof(List<>) && typeof(ContentReference).IsAssignableFrom(objectType.GetGenericArguments()[0]);
+		}
+
+		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
+			JToken root = JToken.Load(reader);
+			if(root is not JArray array) {
+				array = [root];
+			}
+
+			TypeInfo listTypeInfo = objectType.GetTypeInfo().GetGenericArguments()[0].GetTypeInfo();
+			if(typeof(ContentReference).IsAssignableFrom(listTypeInfo)) {
+				IList genericList = (IList) Activator.CreateInstance(typeof(List<>).MakeGenericType(listTypeInfo), array.Count);
+				foreach(JToken token in array) {
+					genericList.Add(Activator.CreateInstance(listTypeInfo, $"{token}"));
+				}
+
+				return genericList;
+			}
+
+			IJsonLineInfo lineInfo = reader as IJsonLineInfo;
+			throw new JsonReaderException($"{root} is not valid for a condition", reader.Path, lineInfo?.LineNumber ?? 0, lineInfo?.LinePosition ?? 0, null);
+		}
+
+		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+			serializer.Serialize(writer, value);
 		}
 	}
 }
