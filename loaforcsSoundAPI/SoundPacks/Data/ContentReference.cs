@@ -16,19 +16,16 @@ public abstract class ContentReference<T>(string input) : ContentReference {
         if(_resolved) return;
         if(string.IsNullOrEmpty(input)) return;
 
-        if(TryResolve(input, out _value)) {
-            _resolved = true;
-
-            OnResolved();
-        }
+        _resolved = TryResolve(input, out _value);
+        OnResolved(_resolved);
     }
-    protected virtual void OnResolved() { }
+    protected virtual void OnResolved(bool success) { }
 
     protected abstract bool TryResolve(string input, out T value);
 
     public static implicit operator T(ContentReference<T> reference) => reference._value;
 
     public override string ToString() {
-        return $"\"{input}\" - Resolved: {Resolved}";
+        return $"\"{input}\" | Resolved: {Resolved}";
     }
 }
