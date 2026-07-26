@@ -8,6 +8,7 @@ using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using loaforcsSoundAPI.Core.Util.Extensions;
 using UnityEngine;
 using UnityEngine.Networking;
+using loaforcsSoundAPI.SoundPacks.AudioClipLoading;
 
 namespace loaforcsSoundAPI;
 
@@ -36,11 +37,11 @@ public static class SoundAPI {
 			throw new FileNotFoundException($"'{fullPath}' not found.");
 		}
 
-		if(!SoundPackLoadPipeline.audioExtensions.ContainsKey(Path.GetExtension(fullPath))) {
+		if(!IAudioClipLoader.audioExtensions.ContainsKey(Path.GetExtension(fullPath))) {
 			throw new NotImplementedException($"Audio file extension: '{Path.GetExtension(fullPath)}' is not implemented.");
 		}
 
-		UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip(fullPath, SoundPackLoadPipeline.audioExtensions[Path.GetExtension(fullPath)]);
+		UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip(fullPath, IAudioClipLoader.audioExtensions[Path.GetExtension(fullPath)]);
 		await request.SendWebRequest();
 
 		AudioClip clip = DownloadHandlerAudioClip.GetContent(request);

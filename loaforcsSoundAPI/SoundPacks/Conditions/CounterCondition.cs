@@ -30,7 +30,7 @@ public class CounterCondition : RangeCondition<int> {
 	/// <example>5</example>
 	public int? ResetsAt { get; private set; }
 
-	public bool? IsLocal { get; internal set; }
+	public bool? IsLocal { get; private set; }
 
 	int _count;
 

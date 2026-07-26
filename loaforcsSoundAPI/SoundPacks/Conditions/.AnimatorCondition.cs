@@ -22,7 +22,7 @@ public abstract class AnimatorCondition : Condition {
     /// <summary>
     /// Value of the <c>Animator</c> parameter to evaluate, of any (valid) type.
     /// </summary>
-    public string Value { get; internal set; }
+    public string Value { get; private set; }
     protected bool _value;
 
     /// <summary>

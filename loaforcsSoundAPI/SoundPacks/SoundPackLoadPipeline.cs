@@ -22,9 +22,6 @@ static class SoundPackLoadPipeline {
 	internal static event Action OnFinishedPipeline = delegate { };
 	internal static Dictionary<string, List<string>> mappings = [ ];
 
-	[Obsolete("Moved to IAudioClipLoader.audioExtensions")]
-	internal static Dictionary<string, AudioType> audioExtensions => IAudioClipLoader.audioExtensions;
-
 	internal class SkippedResults {
 		public int Collections;
 		public int Groups;

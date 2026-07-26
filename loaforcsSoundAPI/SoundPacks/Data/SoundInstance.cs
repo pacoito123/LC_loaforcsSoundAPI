@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using loaforcsSoundAPI.Core.Data;
+using loaforcsSoundAPI.SoundPacks.AudioClipLoading;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -43,7 +44,7 @@ public class SoundInstance : Conditional, IValidatable {
 
 		if(!File.Exists(FullPath)) {
 			results.Add(new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Sound '{Sound}' couldn't be found or doesn't exist!"));
-		} else if(!SoundPackLoadPipeline.audioExtensions.ContainsKey(Path.GetExtension(Sound))) {
+		} else if(!IAudioClipLoader.audioExtensions.ContainsKey(Path.GetExtension(Sound))) {
 			results.Add(new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Audio type: '{Path.GetExtension(Sound)}' is not supported!"));
 		}
 

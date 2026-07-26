@@ -30,13 +30,13 @@ public class SoundReplacementGroup : Conditional, IValidatable {
 
 	[field: NonSerialized]
 	public SoundReplacementCollection Parent { get; internal set; }
-	public int Priority { get; internal set; }
+	public int Priority { get; private set; }
 
-	public List<string> Matches { get; private set; }
+	public List<string> Matches { get; private set; } = [];
 	public List<SoundInstance> Sounds { get; private set; } = [];
 
 	public bool UpdateEveryFrame { get; internal set; }
-	public float? Volume { get; internal set; }
+	public float? Volume { get; private set; }
 
 	public override void OnRegistered() {
 		base.OnRegistered();
