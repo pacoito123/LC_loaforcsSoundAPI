@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using loaforcsSoundAPI.Core;
+using loaforcsSoundAPI.SoundPacks.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -18,8 +18,8 @@ namespace loaforcsSoundAPI.SoundPacks.Conditions;
 /// </soundapi>
 [SoundAPICondition("counter")]
 public class CounterCondition : RangeCondition<int> {
-	private static readonly List<AudioSource> _keys = [];
-	private static readonly Dictionary<AudioSource, int> _localCounters = [];
+	static readonly List<AudioSource> _keys = [];
+	static readonly Dictionary<AudioSource, int> _localCounters = [];
 
 	protected override RangeOperator<int> DefaultRange => new(int.MinValue, int.MaxValue);
 
@@ -35,16 +35,13 @@ public class CounterCondition : RangeCondition<int> {
 	int _count;
 
 	/// <inheritdoc/>
-	public override void OnRegistered() {
-		SceneManager.sceneUnloaded -= ClearDestroyed;
-		SceneManager.sceneUnloaded += ClearDestroyed;
-	}
+	public override void OnRegistered() => SceneManager.sceneUnloaded += ClearDestroyed;
 
-	private static void ClearDestroyed(Scene scene) {
+	static void ClearDestroyed(Scene scene) {
 		int destroyedSources = 0;
 		_keys.AddRange(_localCounters.Keys);
 		foreach(AudioSource key in _keys) {
-			if(key == null && _localCounters.Remove(key!)) {
+			if(key == null && _localCounters.Remove(key)) {
 				destroyedSources++;
 			}
 		}
@@ -64,7 +61,7 @@ public class CounterCondition : RangeCondition<int> {
 		return IncreaseCounter(ref _count);
 	}
 
-	private bool IncreaseCounter(ref int count) {
+	bool IncreaseCounter(ref int count) {
 		LogDebug("counter", $"counting: {count} -> {count + 1}, local: {IsLocal.GetValueOrDefault()}");
 		count++;
 		bool result = EvaluateRangeOperator(count);

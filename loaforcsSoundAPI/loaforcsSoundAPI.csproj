@@ -4,8 +4,6 @@
     <PropertyGroup>
         <AssemblyName>me.loaforc.soundapi</AssemblyName>
         <Product>loaforcsSoundAPI</Product>
-        <!-- Change to whatever version you're currently on. -->
-        <Version>2.0.10</Version>
     </PropertyGroup>
 
     <!-- Project Properties -->
@@ -14,14 +12,6 @@
         <RootNamespace>loaforcsSoundAPI</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
-    </PropertyGroup>
-
-    <!-- Set NuGet Sources -->
-    <PropertyGroup>
-        <RestoreAdditionalProjectSources>
-            https://api.nuget.org/v3/index.json;
-            https://nuget.bepinex.dev/v3/index.json
-        </RestoreAdditionalProjectSources>
     </PropertyGroup>
 
     <!-- Embed Debug Symbols for Easier Debugging -->

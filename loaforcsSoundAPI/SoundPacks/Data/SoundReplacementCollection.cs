@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using loaforcsSoundAPI.Core.Data;
+using loaforcsSoundAPI.Core.Util;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using Newtonsoft.Json;
 
@@ -34,10 +35,7 @@ public class SoundReplacementCollection : Conditional, IFilePathAware, IPackData
 	public string RelativePath {
 		get {
 			if(field.Length == 0) {
-				int index = FilePath.IndexOf("replacers", StringComparison.InvariantCultureIgnoreCase);
-				if(index != -1) {
-					field = FilePath[index..];
-				}
+				field = LogFormats.FormatFilePath(FilePath);
 			}
 			return field;
 		}

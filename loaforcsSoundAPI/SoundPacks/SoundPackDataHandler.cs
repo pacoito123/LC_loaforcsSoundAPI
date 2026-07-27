@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using loaforcsSoundAPI.SoundPacks.Data;
 using loaforcsSoundAPI.SoundPacks.Data.Conditions;
 using UnityEngine;
@@ -38,13 +39,13 @@ static class SoundPackDataHandler {
 		foreach(string match in group.Matches) {
 			string[] splitMatch = match.Split(':', StringSplitOptions.RemoveEmptyEntries);
 			if(splitMatch.Length == 0) continue;
-			string clipName = splitMatch[^1];
+			string clipName = splitMatch.Last();
 			if(!SoundReplacements.TryGetValue(clipName, out List<SoundReplacementGroup> existingGroups)) {
 				existingGroups = [];
 			}
 
 			if(existingGroups.Contains(group)) continue;
-			if(existingGroups.Count == 0 || existingGroups[^1].Priority >= group.Priority) {
+			if(existingGroups.Count == 0 || existingGroups.Last().Priority >= group.Priority) {
 				existingGroups.Add(group);
 			} else {
 				for(int i = existingGroups.Count - 1; i >= 0; i--) {
@@ -62,7 +63,7 @@ static class SoundPackDataHandler {
 		foreach(string match in group.Matches) {
 			string[] splitMatch = match.Split(':', StringSplitOptions.RemoveEmptyEntries);
 			if(splitMatch.Length == 0) continue;
-			string clipName = splitMatch[^1];
+			string clipName = splitMatch.Last();
 
 			SoundReplacements[clipName].Remove(group);
 		}
