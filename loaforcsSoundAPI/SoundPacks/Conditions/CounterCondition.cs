@@ -17,11 +17,11 @@ namespace loaforcsSoundAPI.SoundPacks.Conditions;
 ///		<id>counter</id>
 /// </soundapi>
 [SoundAPICondition("counter")]
-public class CounterCondition : RangeCondition<int> {
+public class CounterCondition : Condition {
 	static readonly List<AudioSource> _keys = [];
 	static readonly Dictionary<AudioSource, int> _localCounters = [];
 
-	protected override RangeOperator<int> DefaultRange => new(int.MinValue, int.MaxValue);
+	public RangeOperator<int> Value { get; private set; } = new(int.MinValue, int.MaxValue);
 
 	/// <summary>
 	/// Resets after reaching this number. Inclusive.
@@ -64,16 +64,12 @@ public class CounterCondition : RangeCondition<int> {
 	bool IncreaseCounter(ref int count) {
 		LogDebug("counter", $"counting: {count} -> {count + 1}, local: {IsLocal.GetValueOrDefault()}");
 		count++;
-		bool result = EvaluateRangeOperator(count);
+		bool result = Value.EvaluateRange(count);
 		LogDebug("counter", $"is {count} in range ({Value})? {result}");
 		if(ResetsAt.HasValue && count >= ResetsAt.Value) {
 			count = 0;
 			LogDebug("counter", $"reset count to 0.");
 		}
 		return result;
-	}
-
-	protected override bool TryParseValue(string parameter, ref int value) {
-		return string.IsNullOrEmpty(parameter) || int.TryParse(parameter, out value);
 	}
 }

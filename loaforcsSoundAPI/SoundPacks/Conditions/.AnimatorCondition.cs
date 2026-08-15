@@ -11,38 +11,30 @@ public abstract class AnimatorCondition : Condition {
     /// <summary>
     /// Name of the <c>Animator</c> parameter to evaluate.
     /// </summary>
-    public string Parameter { get; private set; }
-    protected int _parameterID;
+    public AnimatorHashReference Parameter { get; private set; }
 
     /// <summary>
     /// Type of the <c>Animator</c> parameter to evaluate.
     /// </summary>
-    public string ParameterType { get; private set; }
-    protected AnimatorParamType _parameterType = AnimatorParamType.None;
+    public EnumReference<AnimatorParamType> ParameterType { get; private set; }
 
     /// <summary>
     /// Value of the <c>Animator</c> parameter to evaluate, of any (valid) type.
     /// </summary>
     public string Value { get; private set; }
-    protected bool _value;
+    [NonSerialized] protected bool _value;
 
     /// <summary>
     /// Floating value range operator, used if parameter type is <c>AnimatorParamType.Float</c>.
     /// </summary>
-    public RangeOperator<float> FloatRange {
-        get => _floatRange;
-        private set => _floatRange = value;
-    }
-    RangeOperator<float> _floatRange;
+    public RangeOperator<float> FloatRange { get => _floatRange; }
+    [NonSerialized] RangeOperator<float> _floatRange;
 
     /// <summary>
     /// Integer value range operator, used if parameter type is <c>AnimatorParamType.Integer</c>.
     /// </summary>
-    public RangeOperator<int> IntRange {
-        get => _intRange;
-        private set => _intRange = value;
-    }
-    RangeOperator<int> _intRange;
+    public RangeOperator<int> IntRange { get => _intRange; }
+    [NonSerialized] RangeOperator<int> _intRange;
 
     protected abstract string ValidateWarnMessage { get; }
 
@@ -50,15 +42,15 @@ public abstract class AnimatorCondition : Condition {
     public override bool Evaluate(IContext context) {
         if(!TryGetAnimator(out Animator animator, context)) return false;
 
-        switch(_parameterType) {
+        switch(ParameterType.Value) {
             case AnimatorParamType.Bool or AnimatorParamType.Trigger:
-                if(animator.GetBool(_parameterID) == _value) return true;
+                if(animator.GetBool(Parameter) == _value) return true;
                 break;
             case AnimatorParamType.Float:
-                if(FloatRange.EvaluateRangeOperator(animator.GetFloat(_parameterID))) return true;
+                if(FloatRange.EvaluateRange(animator.GetFloat(Parameter))) return true;
                 break;
             case AnimatorParamType.Integer:
-                if(IntRange.EvaluateRangeOperator(animator.GetInteger(_parameterID))) return true;
+                if(IntRange.EvaluateRange(animator.GetInteger(Parameter))) return true;
                 break;
             case AnimatorParamType.None:
             default:
@@ -70,28 +62,30 @@ public abstract class AnimatorCondition : Condition {
 
     /// <inheritdoc/>
     public override List<IValidatable.ValidationResult> Validate() {
-        IValidatable.ValidationResult result = new(IValidatable.ResultType.FAIL, ValidateWarnMessage);
+        List<IValidatable.ValidationResult> results = [
+            new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, ValidateWarnMessage)
+        ];
 
-        _parameterID = Animator.StringToHash(Parameter);
-        if(!Enum.TryParse(ParameterType, ignoreCase: true, out _parameterType)) return [result];
-        switch(_parameterType) {
+        switch(ParameterType.Value) {
             case AnimatorParamType.Bool or AnimatorParamType.Trigger:
-                if(!bool.TryParse(Value, out _value)) return [result];
+                if(!bool.TryParse(Value, out _value)) return results;
                 break;
             case AnimatorParamType.Float:
-                if(!RangeOperator<float>.ValidateRangeOperator(Value, out _floatRange, out result, static (parameter, ref result) =>
-                    string.IsNullOrEmpty(parameter) || float.TryParse(parameter, out result))) return [result];
+                _floatRange = new RangeOperator<float>(Value, new(float.NegativeInfinity, float.PositiveInfinity));
+                results.AddRange(FloatRange.Validate());
+                if(results.Count > 1) return results;
                 break;
             case AnimatorParamType.Integer:
-                if(!RangeOperator<int>.ValidateRangeOperator(Value, out _intRange, out result, static (parameter, ref result) =>
-                    string.IsNullOrEmpty(parameter) || int.TryParse(parameter, out result))) return [result];
+                _intRange = new RangeOperator<int>(Value, new(int.MinValue, int.MaxValue));
+                results = IntRange.Validate();
+                if(results.Count > 1) return results;
                 break;
             case AnimatorParamType.None:
             default:
                 break;
         }
 
-        return [];
+        return base.Validate();
     }
 
     /// <summary>

@@ -1,79 +1,130 @@
 using System;
+using System.Collections.Generic;
 using loaforcsSoundAPI.Core.Data;
+using Newtonsoft.Json;
 
 namespace loaforcsSoundAPI.SoundPacks.Data;
 
-public struct RangeOperator<T>(T min, T max) where T : struct, IComparable<T> {
-    public T min = min;
-    public T max = (min.CompareTo(max) < 0) ? max : min;
+public abstract class RangeOperator(RangeOperator bounds = null) : IValidatable {
+    /// <inheritdoc/>
+    public virtual List<IValidatable.ValidationResult> Validate() => Validate(bounds);
 
-    public RangeOperator(T target) : this(target, target) { }
+    /// <summary>
+    /// Run validations with defined bounds.
+    /// </summary>
+    /// <param name="bounds">Limits for minimum and maximum values.</param>
+    /// <returns>Non-successful validations.</returns>
+    protected abstract List<IValidatable.ValidationResult> Validate(RangeOperator bounds);
+}
 
-    public readonly bool EvaluateRangeOperator(T value) {
-        return min.CompareTo(value) <= 0 && max.CompareTo(value) >= 0;
-    }
+public class RangeOperator<T> : RangeOperator where T : struct, IComparable<T>, IConvertible {
+    public string Input { get; }
 
-    public readonly override string ToString() {
-        return $"{min}..{max}";
+    public T Min { get => _min; }
+    T _min;
+
+    public T Max { get => _max; }
+    T _max;
+
+    /// <summary>
+    /// Create a <c>RangeOperator</c> from a given string. Used by <c>RangeOperatorConverter</c>.
+    /// </summary>
+    /// <remarks>Requires <c>IValidatable.Validate()</c> to be completed before evaluating any range values.</remarks>
+    /// <param name="input">Value to parse.</param>
+    /// <param name="bounds">Limits for minimum and maximum values.</param>
+    [JsonConstructor]
+    public RangeOperator(string input, RangeOperator<T> bounds = null) : base(bounds) {
+        Input = input;
     }
 
     /// <summary>
-    /// Validates a range operator's formatting.
+    /// Create a <c>RangeOperator</c> with already-defined minimum and maximum values.
     /// </summary>
-    /// <param name="condition">Value to attempt to parse into a range operator.</param>
-    /// <param name="range">Valid range operator to use for this Condition.</param>
-    /// <param name="result">Unsuccessful validations, if any were found.</param>
-    /// <param name="tryParse">TODO.</param>
-    /// <param name="defaultRange">TODO.</param>
-    /// <returns>Whether the validation succeeded or not.</returns>
-    public static bool ValidateRangeOperator(string condition, out RangeOperator<T> range, out IValidatable.ValidationResult result, ParseAction tryParse, RangeOperator<T> defaultRange = default) {
-        range = defaultRange;
-        result = null;
-        if(string.IsNullOrEmpty(condition)) {
-            result = new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Range operator can not be missing or empty!");
-            return false;
+    /// <param name="min">Minimum value of type <c><typeparamref name="T"/></c>.</param>
+    /// <param name="max">Maximum value of type <c><typeparamref name="T"/></c>.</param>
+    /// <param name="bounds">Limits for minimum and maximum values.</param>
+    public RangeOperator(T min, T max, RangeOperator<T> bounds = null) : base(bounds) {
+        _min = min;
+        _max = (min.CompareTo(max) < 0) ? max : min;
+        Input = $"{this}";
+    }
+
+    /// <summary>
+    /// Evaluate if a value of type <c><typeparamref name="T"/></c> is within the range.
+    /// </summary>
+    /// <param name="value">Value of type <c><typeparamref name="T"/></c>.</param>
+    /// <returns>Whether the given value is within the range or not.</returns>
+    public bool EvaluateRange(T value) => Min.CompareTo(value) <= 0 && Max.CompareTo(value) >= 0;
+
+    /// <inheritdoc/>
+    protected override List<IValidatable.ValidationResult> Validate(RangeOperator bounds) {
+        if(string.IsNullOrEmpty(Input)) {
+            return [
+                new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Range operator can not be missing or empty!")
+            ];
         }
 
-        string[] parts = condition.Split("..", StringSplitOptions.None);
+        if(bounds is not RangeOperator<T> boundsWithType) {
+            return [
+                new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Range operator '{Input}' needs defined bounds in order to be validated!")
+            ];
+        }
 
+        string[] parts = Input.Split("..", StringSplitOptions.None);
         switch(parts.Length) {
             case 1:
                 // Case when there's only one number in the condition.
-                T target = range.min;
-                if(!tryParse(parts[0], ref target)) {
-                    // Invalid input.
-                    result = new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Failed to parse: '{parts[0]}' as a '{typeof(T).FullName}'!");
-                    break;
+                T target = boundsWithType.Min;
+                if(!TryConvert(parts[0], ref target, boundsWithType, out IValidatable.ValidationResult result)) {
+                    return [result];
                 }
-                range = new(target);
+                _min = target;
+                _max = target;
                 break;
             case 2:
                 // Case when there's a range specified.
-                T lowerBound = range.min;
-                if(!tryParse(parts[0], ref lowerBound)) {
-                    // Invalid input.
-                    result = new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Failed to parse: '{parts[0]}' as a '{typeof(T).FullName}'!");
-                    break;
+                T min = boundsWithType.Min;
+                T max = boundsWithType.Max;
+                if(!TryConvert(parts[0], ref min, boundsWithType, out result) || !TryConvert(parts[1], ref max, boundsWithType, out result)) {
+                    return [result];
                 }
-
-                T upperBound = range.max;
-                if(!tryParse(parts[1], ref upperBound)) {
-                    // Invalid input.
-                    result = new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Failed to parse: '{parts[1]}' as a '{typeof(T).FullName}'!");
-                    break;
-                }
-
-                range = new(lowerBound, upperBound);
+                _min = min;
+                _max = (min.CompareTo(max) < 0) ? max : min;
                 break;
             case > 2:
-                result = new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Range operator '{condition}' uses '..' more than once!");
-                break;
+                return [
+                    new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Range operator '{Input}' uses '..' more than once!")
+                ];
             default:
                 break;
         }
 
-        return result == null;
+        return [];
     }
 
-    public delegate bool ParseAction(string value, ref T result);
+    static bool TryConvert(string parameter, ref T value, RangeOperator<T> bounds, out IValidatable.ValidationResult result) {
+        result = null;
+
+        if(string.IsNullOrEmpty(parameter)) {
+            return true;
+        }
+
+        try {
+            value = (T) Convert.ChangeType(parameter, typeof(T));
+        } catch(Exception e) {
+            result = new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Failed to parse '{parameter}' as type '{typeof(T).FullName}': {e}");
+            return false;
+        }
+
+        if(!bounds.EvaluateRange(value)) {
+            result = new IValidatable.ValidationResult(IValidatable.ResultType.FAIL, $"Parameter '{parameter}' is outside allowed bounds: '{bounds}'");
+            return false;
+        }
+
+        return true;
+    }
+
+    public override string ToString() {
+        return $"{Min}..{Max}";
+    }
 }
