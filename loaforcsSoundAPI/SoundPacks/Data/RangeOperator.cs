@@ -6,6 +6,8 @@ using Newtonsoft.Json;
 namespace loaforcsSoundAPI.SoundPacks.Data;
 
 public abstract class RangeOperator(RangeOperator bounds = null) : IValidatable {
+    public abstract int Uses { get; internal set; }
+
     /// <inheritdoc/>
     public virtual List<IValidatable.ValidationResult> Validate() => Validate(bounds);
 
@@ -25,6 +27,8 @@ public class RangeOperator<T> : RangeOperator where T : struct, IComparable<T>, 
 
     public T Max { get => _max; }
     T _max;
+
+    public sealed override int Uses { get; internal set; }
 
     /// <summary>
     /// Create a <c>RangeOperator</c> from a given string. Used by <c>RangeOperatorConverter</c>.
