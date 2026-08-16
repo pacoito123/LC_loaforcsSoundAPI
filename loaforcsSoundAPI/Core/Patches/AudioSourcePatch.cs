@@ -28,7 +28,7 @@ static class AudioSourcePatch {
 					AudioSourceAdditionalData data = AudioSourceAdditionalData.GetOrCreate(clone);
 					SoundAPIAudioManager.liveAudioSourceData.Add(data); // Set UEF OneShot as a live AudioSource, for proper cleanup after it gets destroyed.
 					clone.clip = result.Value.ReplacedClip;
-					clone.volume *= data.VolumeScale;
+					clone.volume *= volumeScale;
 					data.ReplacedWith = result.Value.ReplacedWith; // setting replaced with here is important, see SoundReplacementHandler.ShouldBeReplaced (would have to handle DisableReplacing manually instead)
 					data.VolumeScale = volumeScale;
 					if(data.ReplacedWith?.Volume.HasValue == true) {
@@ -41,7 +41,7 @@ static class AudioSourcePatch {
 							Debuggers.AudioSourceAdditionalData?.Log($"Changed {clone} (gameobject: {clone.name}) volume to: {volume})");
 						}
 					}
-					clone.PlayThenDestroy();
+					clone.PlayThenDestroy(); // TODO: Object pooling instead of destroying.
 
 					return false;
 				}

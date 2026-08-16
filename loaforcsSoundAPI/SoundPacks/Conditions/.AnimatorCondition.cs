@@ -72,7 +72,7 @@ public abstract class AnimatorCondition : Condition {
                 break;
             case AnimatorParamType.Float:
                 _floatRange = new RangeOperator<float>(Value, new(float.NegativeInfinity, float.PositiveInfinity));
-                results.AddRange(FloatRange.Validate());
+                results = FloatRange.Validate();
                 if(results.Count > 1) return results;
                 break;
             case AnimatorParamType.Integer:
